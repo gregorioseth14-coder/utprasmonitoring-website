@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTPRAS & Employee Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 40px;
+            background-color: #e0f2f7; /* Light blue representing TESDA */
+            color: #333;
+        }
+
+        .header-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 30px;
+        }
+
+        .header-logos img {
+            width: 100px;
+            height: auto;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .header-logos img:hover {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        /* Main Tabs Styling */
+        .main-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .main-tab-button {
+            padding: 12px 25px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 0 5px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        }
+
+        .main-tab-button.active {
+            background-color: #007bff; /* Active blue */
+            color: white;
+            border-bottom: 2px solid #007bff;
+            box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
+        }
+
+        .main-tab-button:hover:not(.active) {
+            background-color: #e2e6ea;
+        }
+
+        /* Sub-Tabs Styling (for Employee Monitoring) */
+        .sub-tabs {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+        }
+
+        .sub-tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: #f8f9fa;
+            font-size: 0.95em;
+            font-weight: 500;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 0 2px;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .sub-tab-button.active {
+            background-color: 
+            red; /* Active green for sub-tabs */
+            color: white;
+            border-bottom: 1px solid #28a745;
+        }
+
+        .sub-tab-button:hover:not(.active) {
+            background-color: #e9ecef;
+        }
+
+        /* Content Area Styling */
+        .tab-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            min-height: 400px; /* Ensure content area has some height */
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            margin: 5px;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .edit-btn { background-color: #28a745; color: white; }
+        .add-btn { background-color: #007bff; color: white; }
+        .delete-btn { background-color: #dc3545; color: white; }
+        .export-btn { background-color: #ffc107; color: #333; }
+        .save-btn { background-color: #17a2b8; color: white; } /* Always visible now, text changes */
+        .cancel-btn { background-color: #6c757d; color: white; display: none; } /* New style for cancel button */
+
+
+        .btn .icon {
+            width: 1em;
+            height: 1em;
+            vertical-align: middle;
+            fill: currentColor;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px; /* Added margin for spacing */
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #e9ecef;
+            color: #495057;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #e2e6ea;
+        }
+
+        caption {
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #34495e;
+        }
+
+        /* Removed contenteditable styling as we are moving to form-based editing */
+        /* td[contenteditable="true"] {
+            background-color: #fffacd;
+            border: 1px dashed #ccc;
+        } */
+
+        /* Message box styling */
+        .message-box {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .message-box button {
+            margin-top: 15px;
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Employee Form Specific Styles */
+        .employee-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f8ff; /* Lightest blue for form background */
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .employee-form-grid label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .employee-form-grid input[type="text"],
+        .employee-form-grid input[type="email"],
+        .employee-form-grid input[type="number"],
+        .employee-form-grid input[type="date"],
+        .employee-form-grid select { /* Added select for styling */
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .employee-form-grid input[type="text"]:focus,
+        .employee-form-grid input[type="email"]:focus,
+        .employee-form-grid input[type="number"]:focus,
+        .employee-form-grid input[type="date"]:focus,
+        .employee-form-grid select:focus { /* Added select for styling */
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .form-actions {
+            grid-column: 1 / -1; /* Span across all columns */
+            text-align: center;
+            margin-top: 30px;
+        }
+        .employee-table-container {
+            margin-top: 20px;
+            max-height: 500px; /* Limit height for scrollability */
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* Styles for the qualification input group within the form grid */
+        .qualification-input-group {
+            display: flex;
+            align-items: flex-end; /* Align items to the bottom */
+            gap: 10px; /* Space between select and button */
+            width: 100%; /* Ensure it takes full width of its grid cell */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .qualification-input-group > div { /* Target the div containing the select */
+            flex-grow: 1; /* Allow select container to take available space */
+            min-width: 200px; /* Prevent select from becoming too small */
+        }
+        /* Styles for the new qualification section (input + save/cancel buttons) */
+        .new-qualification-section {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            margin-top: 10px; /* Space from the dropdown/add button */
+            padding-top: 10px;
+            border-top: 1px dashed #eee;
+            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+        }
+        .new-qualification-section.hidden {
+            display: none; /* Explicitly hide when 'hidden' class is present */
+        }
+        .new-qualification-section .input-wrapper {
+            flex-grow: 1;
+            min-width: 200px; /* Ensure input doesn't get too small */
+        }
+        .new-qualification-section input[type="text"] {
+            width: 100%; /* Ensure input takes full width within its wrapper */
+        }
+        /* Styling for the new buttons, overriding .btn for specific look */
+        #toggleAddQualificationBtn,
+        #saveNewQualificationBtn,
+        #cancelNewQualificationBtn {
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #toggleAddQualificationBtn:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        #saveNewQualificationBtn {
+            background-color: #28a745; /* Green */
+            color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+        }
+        #saveNewQualificationBtn:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+        #cancelNewQualificationBtn {
+            background-color: #6c757d; /* Gray */
+            color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+        }
+        #cancelNewQualificationBtn:hover {
+            background-color: #5a6268; /* Darker gray on hover */
+        }
+
+        /* Styles for status indicators in Monitoring Logs */
+        .status-active { color: #28a745; font-weight: bold; } /* Green */
+        .status-expiring { color: #ffc107; font-weight: bold; } /* Orange/Yellow */
+        .status-expired { color: #dc3545; font-weight: bold; } /* Red */
+@media screen and (max-width: 480px) {
+  .header-logos img { 
+    width: 80px;
+  }
+}
+    </style>
+</head>
+<body>
+
+    <div class="header-logos">
+        <img src="images\Picbagong pilipinas.png" alt="">
+        <img src="images\Picture1.png" alt="">
+        <img src="images\tesdalogo.png" alt="tesda-logo">
+          
+
+
+    </div>
+
+
+    <h1>Unified TVET Program Registration and Accreditation System</h1>
+
+    <!-- Main Tabs Navigation -->
+    <div class="main-tabs">
+        <button class="main-tab-button active" onclick="switchMainTab('employee-monitoring')">Employee Monitoring</button>
+        <button class="main-tab-button" onclick="switchMainTab('utpras-programs')">UTPRAS Programs</button>
+    </div>
+
+    <!-- Content for Employee Monitoring Tab -->
+    <div id="employee-monitoring-content" class="tab-content">
+        <h2 class="text-xl font-semibold text-center text-red-600 mb-6">UTPRAS Employee Data Monitoring</h2>
+
+        <!-- Sub-Tabs for Employee Monitoring -->
+        <div class="sub-tabs">
+            <button class="sub-tab-button active" onclick="switchSubTab('employee-records')">Employee Records</button>
+            <button class="sub-tab-button" onclick="switchSubTab('monitoring-logs')">Monitoring Logs</button>
+            <button class="sub-tab-button" onclick="switchSubTab('list-of-trainers')">List of Trainers</button>
+            <button class="sub-tab-button" onclick="switchSubTab('list-of-officials')">List of Officials</button>
+            <button class="sub-tab-button" onclick="switchSubTab('list-of-non-teaching-staffs')">List of Non-Teaching Staffs</button>
+            <button class="sub-tab-button" id="ncTabButton" onclick="switchSubTab('nc-records')" style="display: none;">NC Records</button>
+            <button class="sub-tab-button" id="nttcTabButton" onclick="switchSubTab('nttc-records')" style="display: none;">NTTC Records</button>
+        </div>
+
+        <!-- Employee Records Sub-Tab Content -->
+        <div id="employee-records-content" class="sub-tab-content">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">Add New Employee Record</h3>
+            <div class="employee-form-grid">
+                <div>
+                    <label for="employeeId">Employee ID</label>
+                    <input type="text" id="employeeId" placeholder="e.g., EMP-001">
+                </div>
+                <div>
+                    <label for="employeeName">Employee Name</labeL>
+                    <input type="text" id="employeeName" placeholder="e.g., Juan Dela Cruz">
+                </div>
+                <div>
+                    <label for="position">Position</label>
+                    <input type="text" id="position" placeholder="e.g., Instructor I">
+                </div>
+                <div>
+                    <label for="department">Department</label>
+                    <input type="text" id="department" placeholder="e.g., Automotive Servicing">
+                </div>
+                <div>
+                    <label for="appointmentNature">Nature of Appointment</label>
+                    <input type="text" id="appointmentNature" placeholder="e.g., Permanent, Contractual">
+                </div>
+                <div>
+                    <label for="educationAttainment">Education Attainment</label>
+                    <input type="text" id="educationAttainment" placeholder="e.g., BSIT, MAEd">
+                </div>
+                <div>
+                    <label for="yearsTeaching">Years Teaching</label>
+                    <input type="number" id="yearsTeaching" placeholder="e.g., 5">
+                </div>
+                <div>
+                    <label for="yearsIndustryExp">Years Industry Experience</label>
+                    <input type="number" id="yearsIndustryExp" placeholder="e.g., 10">
+                </div>
+                <div>
+                    <label for="dateHired">Date Hired</label>
+                    <input type="date" id="dateHired">
+                </div>
+                
+                <div>
+                    <label for="address">Address</label>
+                    <input type="text" id="address" placeholder="e.g., 123 Main St, City">
+                </div>
+                <div>
+                    <label for="contactNumber">Contact Number</label>
+                    <input type="text" id="contactNumber" placeholder="e.g., 09171234567">
+                </div>
+                <div>
+                    <label for="emailAddress">Email Address</label>
+                    <input type="email" id="emailAddress" placeholder="e.g., juan@example.com">
+                </div>
+
+                <!-- Qualification Dropdown and Add Qualification Button -->
+                <div class="col-span-full">
+                    <div class="qualification-input-group">
+                        <div>
+                            <label for="qualification" class="block text-sm font-medium text-gray-700 mb-1">Qualification</label>
+                            <select id="qualification" name="qualification"
+                                     class="mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">-- Select Qualification --</option>
+                                <!-- Hardcoded options will be dynamically sorted and added by JS -->
+                            </select>
+                        </div>
+                        <button type="button" id="toggleAddQualificationBtn"
+                                 class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 add-qual-btn">
+                            Add Qualification
+                        </button>
+                    </div>
+                    <!-- This div is initially hidden and becomes visible when the "Add Qualification" button is clicked. -->
+                    <!-- It contains the input field for the new qualification name, and the Save and Cancel buttons. -->
+                    <div id="newQualificationSection" class="new-qualification-section hidden">
+                        <div class="input-wrapper">
+                            <label for="newQualificationName" class="block text-sm font-medium text-gray-700 mb-1">New Qualification Name</label>
+                            <input type="text" id="newQualificationName" name="newQualificationName"
+                                   class="mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2">
+                        </div>
+                        <button type="button" id="saveNewQualificationBtn"
+                                 class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            Save New Qualification
+                        </button>
+                        <button type="button" id="cancelNewQualificationBtn"
+                                 class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                <!-- End Qualification Dropdown and Add Qualification Button -->
+
+                <!-- Certification Details -->
+                <div id="certificationDetails" class="col-span-full hidden grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- TMC Group -->
+                    <div>
+                        <label for="tmcNumber">TMC Number</label>
+                        <input type="text" id="tmcNumber" placeholder="e.g., TMC-12345">
+                    </div>
+                    <div>
+                        <label for="tmcIssuedDate">TMC Issued Date</label>
+                        <input type="date" id="tmcIssuedDate">
+                    </div>
+                    <div>
+                        <label for="tmcExpiryDate">TMC Expiry Date</label>
+                        <input type="date" id="tmcExpiryDate">
+                    </div>
+                    <!-- NC Group -->
+                    <div>
+                        <label for="ncNumber">NC Number</label>
+                        <input type="text" id="ncNumber" placeholder="e.g., NC-12345">
+                    </div>
+                    <div>
+                        <label for="ncIssuedDate">NC Issued Date</label>
+                        <input type="date" id="ncIssuedDate">
+                    </div>
+                    <div>
+                        <label for="ncExpiryDate">NC Expiry Date</label>
+                        <input type="date" id="ncExpiryDate">
+                    </div>
+                    <!-- NTTC Group with N/A checkbox -->
+                    <div class="flex items-end"> <!-- Use flex to align input and checkbox -->
+                        <div class="flex-grow">
+                            <label for="nttcNumber">NTTC Number</label>
+                            <input type="text" id="nttcNumber" placeholder="e.g., NTTC-12345">
+                        </div>
+                        <div class="ml-2 mb-1"> <!-- Margin for spacing, mb-1 to align checkbox with input bottom -->
+                            <input type="checkbox" id="nttcNaCheckbox">
+                            <label for="nttcNaCheckbox" class="text-sm font-medium text-gray-700">N/A</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="nttcIssuedDate">NTTC Issued Date</label>
+                        <input type="date" id="nttcIssuedDate">
+                    </div>
+                    <div>
+                        <label for="nttcExpiryDate">NTTC Expiry Date</label>
+                        <input type="date" id="nttcExpiryDate">
+                    </div>
+                </div>
+                <!-- End Certification Details -->
+
+                <div class="checkbox-group col-span-full">
+                    <input type="checkbox" id="withCertificate">
+                    <label for="withCertificate">With Certificate of Employment</label>
+                </div>
+                <div class="checkbox-group col-span-full">
+                    <input type="checkbox" id="markAsOfficial">
+                    <label for="markAsOfficial">Mark as Official</label>
+                </div>
+                <div class="form-actions">
+                    <button class="btn save-btn" id="saveEmployeeBtn" onclick="window.saveEmployeeRecord()">Save Employee Record</button>
+                    <button class="btn cancel-btn" id="cancelEditBtn" onclick="window.cancelEdit()">Cancel</button>
+                </div>
+            </div>
+
+            <h3 class="text-lg font-medium text-blue-700 mt-8 mb-4">Employee Records List</h3>
+            <div class="employee-table-container">
+                <table id="employeeTable">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Department</th>
+                            <th>Appointment</th>
+                            <th>Education</th>
+                            <th>Years Teaching</th>
+                            <th>Years Industry Exp.</th>
+                            <th>Date Hired</th>
+                            <th>Address</th>
+                            <th>Contact</th>
+                            <th>Email</th>
+                            <th>Qualification</th>
+                            <th>TMC Number</th>
+                            <th>TMC Issued</th>
+                            <th>TMC Expiry</th>
+                            <th>NC Number</th>
+                            <th>NC Issued</th>
+                            <th>NC Expiry</th>
+                            <th>NTTC Number</th>
+                            <th>NTTC Issued</th>
+                            <th>NTTC Expiry</th>
+                            <th>Certificate</th>
+                            <th>Official</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Employee data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Monitoring Logs Sub-Tab Content -->
+        <div id="monitoring-logs-content" class="sub-tab-content hidden">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">Certification Monitoring Logs</h3>
+            <div class="employee-table-container">
+                <table id="monitoringLogsTable">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Employee Name</th>
+                            <th>Position</th>
+                            <th>Qualification</th>
+                            <th>TMC Status</th>
+                            <th>NC Status</th>
+                            <th>NTTC Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Monitoring data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- List of Trainers Sub-Tab Content -->
+        <div id="list-of-trainers-content" class="sub-tab-content hidden">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">List of Trainers</h3>
+            <div class="employee-table-container">
+                <table id="trainersTable">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Department</th>
+                            <th>Qualification</th>
+                            <th>Contact</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Trainers data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- List of Officials Sub-Tab Content -->
+        <div id="list-of-officials-content" class="sub-tab-content hidden">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">List of Officials</h3>
+            <div class="employee-table-container">
+                <table id="officialsTable">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Department</th>
+                            <th>Contact</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Officials data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- List of Non-Teaching Staffs Sub-Tab Content -->
+        <div id="list-of-non-teaching-staffs-content" class="sub-tab-content hidden">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">List of Non-Teaching Staffs</h3>
+            <div class="employee-table-container">
+                <table id="nonTeachingStaffsTable">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Department</th>
+                            <th>Contact</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Non-Teaching Staffs data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="nc-records-content" class="sub-tab-content hidden">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">NC Records</h3>
+            <p>This section will display NC (National Certificate) related records for employees.</p>
+            <!-- You can add a table or form here for NC details -->
+        </div>
+        <div id="nttc-records-content" class="sub-tab-content hidden">
+            <h3 class="text-lg font-medium text-blue-700 mb-4">NTTC Records</h3>
+            <p>This section will display NTTC (National TVET Trainer Certificate) related records for employees.</p>
+            <!-- You can add a table or form here for NTTC details -->
+        </div>
+    </div>
+
+    <!-- Content for UTPRAS Programs Tab -->
+    <div id="utpras-programs-content" class="tab-content hidden">
+        <h2 class="text-xl font-semibold text-center text-blue-700 mb-6">UTPRAS Qualifications Tracker</h2>
+        <div class="controls">
+            <button class="btn add-btn" onclick="window.addProgram()">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4C11.4477 4 11 4.44772 11 5V11H5C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13H11V19C11 19.5523 11.4477 20 12 20C12.5523 20 13 19.5523 13 19V13H19C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11H13V5C13 4.44772 12.5523 4 12 4Z"/>
+                </svg>
+                Add New Program
+            </button>
+            <button class="btn export-btn" onclick="window.exportToExcel()">Export to Excel</button>
+        </div>
+        <table id="utprasTable">
+            <caption>UTPRAS Qualifications Tracker</caption>
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Program Qualification</th>
+                    <th>UTPRAS Registration Number</th>
+                    <th>Duration</th>
+                    <th>Date Registered</th>
+                    <th>Validity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be loaded here by JavaScript from Firestore -->
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- Hidden file inputs for each logo -->
+    <input type="file" id="uploadSchoolLogoInput" accept="image/*" style="display: none;">
+    <input type="file" id="uploadTesdaLogoInput" accept="image/*" style="display: none;">
+    <input type="file" id="uploadBagongPilipinasLogoInput" accept="image/*" style="display: none;">
+
+    <!-- Custom Message Box -->
+    <div id="messageBox" class="message-box">
+        <p id="messageText"></p>
+        <button onclick="window.hideMessageBox()">OK</button>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase variables (will be initialized on DOMContentLoaded)
+        let app;
+        let db;
+        let auth;
+        let userId;
+        let isAuthReady = false; // Flag to ensure auth is ready before Firestore ops
+        let allEmployees = []; // Global array to hold all employee data for filtering
+        let editingEmployeeId = null; // To track which employee is being edited
+
+        // --- IMPORTANT: Firebase Configuration ---
+        // If you are running this code OUTSIDE of the Canvas environment,
+        // you MUST use the 'myFirebaseConfig' object below.
+        // It has been populated with the exact values from your screenshot.
+        //
+        // If you are running in Canvas, use the provided config; otherwise, use your manually pasted config.
+        const myFirebaseConfig = {
+          apiKey: "AIzaSyARfFe9XWqj_f4XLJneLZicHcfdY-UNuVA",
+          authDomain: "utpras-tracker-database.firebaseapp.com",
+          projectId: "utpras-tracker-database",
+          storageBucket: "utpras-tracker-database.firebasestorage.app",
+          messagingSenderId: "955784389303",
+          appId: "1:955784389303:web:3721a82b62fc8542e72332",
+          measurementId: "G-J1V7RNZXK9"
+        };
+
+        // Global variables provided by Canvas environment (these are automatically set by Canvas)
+        // If running outside Canvas, __app_id will be undefined, so we provide a fallback.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-canvas-app-id';
+        // If running in Canvas, use the provided config; otherwise, use your manually pasted config.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0
+                               ? JSON.parse(__firebase_config)
+                               : myFirebaseConfig;
+        // If running outside Canvas, __initial_auth_token will be undefined, so anonymous sign-in will be used.
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+
+        // --- Custom Message Box Functions (replacing alert/confirm) ---
+        // Functions called directly from HTML onclick attributes must be in the global scope (window object)
+        window.showMessageBox = function(message) {
+            document.getElementById('messageText').innerText = message;
+            document.getElementById('messageBox').style.display = 'block';
+        }
+
+        window.hideMessageBox = function() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+
+        // Override window.alert for a custom message box
+        window.alert = window.showMessageBox;
+        // For confirm, we'll need a custom modal with callbacks if true confirmation is needed.
+        // For simplicity, for delete, we'll use a direct call to showMessageBox.
+        window.confirm = (message) => {
+            // This is a simplified confirm. For a true confirm, you'd need a modal with Yes/No buttons
+            // and callbacks. For now, we'll just show the message.
+            window.showMessageBox(message + " (Action will proceed after OK.)");
+            return true; // Always return true for this simplified confirm
+        };
+
+        /**
+         * Converts a date string into "Month Day, Year" format.
+         * This function can handle various date string inputs that Date.parse() can understand,
+         * including YYYY-MM-DD and MM/DD/YYYY, and formats them consistently.
+         * @param {string} dateString The date string to format.
+         * @returns {string} The formatted date string or the original string if invalid.
+         */
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return dateString;
+            }
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Intl.DateTimeFormat('en-US', options).format(date);
+        }
+
+        /**
+         * Determines the status of a certification based on its expiry date.
+         * @param {string} expiryDateString The expiry date in YYYY-MM-DD format.
+         * @returns {string} 'Active', 'Expiring Soon', or 'Expired'.
+         */
+        function getCertificationStatus(expiryDateString) {
+            if (!expiryDateString) {
+                return 'N/A';
+            }
+            const expiryDate = new Date(expiryDateString);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today to start of day
+
+            if (isNaN(expiryDate.getTime())) {
+                return 'Invalid Date';
+            }
+
+            // Set expiryDate to end of day for comparison
+            expiryDate.setHours(23, 59, 59, 999);
+
+            if (expiryDate < today) {
+                return '<span class="status-expired">Expired</span>';
+            }
+
+            const ninetyDaysFromNow = new Date();
+            ninetyDaysFromNow.setDate(today.getDate() + 90);
+            ninetyDaysFromNow.setHours(23, 59, 59, 999); // Normalize to end of day
+
+            if (expiryDate <= ninetyDaysFromNow) {
+                return '<span class="status-expiring">Expiring Soon</span>';
+            }
+
+            return '<span class="status-active">Active</span>';
+        }
+
+
+        // --- Tab Switching Logic ---
+        window.switchMainTab = function(tabId) {
+            document.querySelectorAll('.main-tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            document.querySelector(`.main-tab-button[onclick*="${tabId}"]`).classList.add('active');
+            document.getElementById(tabId + '-content').classList.remove('hidden');
+
+            // If switching to employee monitoring, ensure default sub-tab is active
+            if (tabId === 'employee-monitoring') {
+                switchSubTab('employee-records');
+                // Re-added updateQualificationTabsVisibility as qualification is back
+                updateQualificationTabsVisibility();
+            }
+        };
+
+        window.switchSubTab = function(subTabId) {
+            document.querySelectorAll('.sub-tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelectorAll('.sub-tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Find the button with the correct onclick attribute
+            const targetButton = document.querySelector(`.sub-tab-button[onclick*="switchSubTab('${subTabId}')"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+            
+            const targetContent = document.getElementById(subTabId + '-content');
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
+
+
+            // Call specific render functions based on the sub-tab
+            if (subTabId === 'monitoring-logs') {
+                renderMonitoringLogs(allEmployees);
+            } else if (subTabId === 'list-of-trainers') {
+                renderListOfTrainers(allEmployees);
+            } else if (subTabId === 'list-of-officials') {
+                renderListOfOfficials(allEmployees);
+            } else if (subTabId === 'list-of-non-teaching-staffs') {
+                renderListOfNonTeachingStaffs(allEmployees);
+            }
+        };
+
+        /**
+         * Controls the visibility of NC and NTTC sub-tabs based on Qualification dropdown selection.
+         */
+        function updateQualificationTabsVisibility() {
+            const qualificationSelect = document.getElementById('qualification');
+            const ncTabButton = document.getElementById('ncTabButton');
+            const nttcTabButton = document.getElementById('nttcTabButton');
+
+            // Check if a qualification is selected (value is not empty)
+            if (qualificationSelect.value.trim() !== '') {
+                ncTabButton.style.display = 'inline-block';
+                nttcTabButton.style.display = 'inline-block';
+            } else {
+                ncTabButton.style.display = 'none';
+                nttcTabButton.style.display = 'none';
+                // If the hidden tabs were active, switch back to 'employee-records'
+                if (ncTabButton.classList.contains('active') || nttcTabButton.classList.contains('active')) {
+                    switchSubTab('employee-records');
+                }
+            }
+        }
+
+
+        // --- UTPRAS Programs Logic ---
+        /**
+         * Populates the UTPRAS table with data fetched from Firestore.
+         * @param {Array<Object>} data An array of program objects from Firestore.
+         */
+        function renderUtprasTable(data) {
+            const tableBody = document.getElementById("utprasTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            // Sort the data by creation timestamp before rendering
+            data.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateA.getTime() - dateB.getTime();
+            });
+
+            data.forEach((program, index) => {
+                const row = tableBody.insertRow();
+                row.setAttribute('data-id', program.id); // Store Firestore document ID on the row
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${program.qualification}</td>
+                    <td>${program.registrationNumber}</td>
+                    <td>${program.duration}</td>
+                    <td>${formatDate(program.dateRegistered)}</td>
+                    <td>${formatDate(program.validity)}</td>
+                    <td>
+                        <button class="btn edit-btn" onclick="window.editUtprasRow(this)">Edit</button>
+                        <button class="btn delete-btn" onclick="window.deleteUtprasRow(this)">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        /**
+         * Adds a new program to Firestore and updates the UTPRAS table.
+         */
+        window.addProgram = async function() {
+            if (!isAuthReady) {
+                window.showMessageBox("Authentication not ready. Please wait.");
+                return;
+            }
+
+            const newProgram = {
+                qualification: "New Program",
+                registrationNumber: "UTP123456",
+                duration: "000 hours",
+                dateRegistered: new Date().toISOString().slice(0, 10),
+                validity: new Date(new Date().setFullYear(new Date().getFullYear() + 3)).toISOString().slice(0, 10),
+                userId: userId,
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, `artifacts/${appId}/users/${userId}/utpras_programs`), newProgram);
+                window.showMessageBox("Program added successfully! ID: " + docRef.id);
+            } catch (e) {
+                window.showMessageBox("Error adding program: " + e.message);
+                console.error("Error adding program: ", e);
+            }
+        };
+
+        /**
+         * Enables content editing for cells in the selected UTPRAS row.
+         */
+        window.editUtprasRow = function(button) {
+            // For UTPRAS table, we'll keep the direct contenteditable for simplicity
+            const row = button.closest("tr");
+            row.cells[1].contentEditable = "true";
+            row.cells[2].contentEditable = "true";
+            row.cells[3].contentEditable = "true";
+            row.cells[4].contentEditable = "true";
+            row.cells[5].contentEditable = "true";
+
+            // Add a temporary save button if not already there
+            let saveButton = row.querySelector(".save-btn");
+            if (!saveButton) {
+                saveButton = document.createElement('button');
+                saveButton.className = 'btn save-btn';
+                saveButton.textContent = 'Save';
+                saveButton.onclick = () => window.saveUtprasRow(saveButton);
+                button.parentNode.insertBefore(saveButton, button.nextSibling);
+            }
+            saveButton.style.display = "inline-block";
+            button.style.display = "none"; // Hide edit button
+        };
+
+        /**
+         * Saves the changes made to an edited UTPRAS row to Firestore.
+         */
+        window.saveUtprasRow = async function(button) {
+            if (!isAuthReady) {
+                window.showMessageBox("Authentication not ready. Please wait.");
+                return;
+            }
+
+            const row = button.closest("tr");
+            const docId = row.getAttribute('data-id');
+
+            const qualification = row.cells[1].innerText.trim();
+            const registrationNumber = row.cells[2].innerText.trim();
+            const duration = row.cells[3].innerText.trim();
+            const dateRegisteredInput = row.cells[4].innerText.trim();
+            const validityInput = row.cells[5].innerText.trim();
+
+            const monthDayYearRegex = /^(January|February|March|April|May|June|July|August|September|October|November|December)\s\d{1,2},\s\d{4}$/;
+
+            if (!monthDayYearRegex.test(dateRegisteredInput)) {
+                window.showMessageBox("Date Registered must be in 'Month Day, Year' format (e.g., 'May 26, 2023').");
+                return;
+            }
+            if (!monthDayYearRegex.test(validityInput)) {
+                window.showMessageBox("Validity must be in 'Month Day, Year' format (e.g., 'May 26, 2026').");
+                return;
+            }
+
+            const dateRegisteredForStorage = new Date(dateRegisteredInput).toISOString().slice(0, 10);
+            const validityForStorage = new Date(validityInput).toISOString().slice(0, 10);
+
+            const updatedProgram = {
+                qualification: qualification,
+                registrationNumber: registrationNumber,
+                duration: duration,
+                dateRegistered: dateRegisteredForStorage,
+                validity: validityForStorage
+            };
+
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/utpras_programs`, docId), updatedProgram);
+                window.showMessageBox("Program updated successfully!");
+            } catch (e) {
+                window.showMessageBox("Error updating program: " + e.message);
+                console.error("Error updating program: ", e);
+            }
+
+            row.cells[1].contentEditable = "false";
+            row.cells[2].contentEditable = "false";
+            row.cells[3].contentEditable = "false";
+            row.cells[4].contentEditable = "false";
+            row.cells[5].contentEditable = "false";
+            
+            row.querySelector(".edit-btn").style.display = "inline-block";
+            button.style.display = "none"; // Hide save button
+        };
+
+        /**
+         * Deletes the selected UTPRAS row from Firestore.
+         */
+        window.deleteUtprasRow = async function(button) {
+            if (!isAuthReady) {
+                window.showMessageBox("Authentication not ready. Please wait.");
+                return;
+            }
+
+            const row = button.closest("tr");
+            const docId = row.getAttribute('data-id');
+
+            window.showMessageBox("Are you sure you want to delete this entry? Click OK to confirm.");
+
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/utpras_programs`, docId));
+                window.showMessageBox("Program deleted successfully!");
+            } catch (e) {
+                window.showMessageBox("Error deleting program: " + e.message);
+                console.error("Error deleting program: ", e);
+            }
+        };
+
+        /**
+         * Exports the UTPRAS table data to an Excel file.
+         */
+        window.exportToExcel = function() {
+            let table = document.getElementById("utprasTable");
+            let wb = XLSX.utils.table_to_book(table, { sheet: "UTPRAS Tracker" });
+            XLSX.writeFile(wb, "UTPRAS_Qualifications.xlsx");
+        };
+
+
+        // --- Employee Monitoring Logic ---
+
+        /**
+         * Populates the Employee table with data fetched from Firestore.
+         * @param {Array<Object>} data An array of employee objects from Firestore.
+         */
+        function renderEmployeeTable(data) {
+            const tableBody = document.getElementById("employeeTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            // Sort the data by creation timestamp before rendering
+            data.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateA.getTime() - dateB.getTime();
+            });
+
+            data.forEach((employee, index) => {
+                const row = tableBody.insertRow();
+                row.setAttribute('data-id', employee.id); // Store Firestore document ID on the row
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${employee.employeeId || ''}</td>
+                    <td>${employee.employeeName || ''}</td>
+                    <td>${employee.position || ''}</td>
+                    <td>${employee.department || ''}</td>
+                    <td>${employee.appointmentNature || ''}</td>
+                    <td>${employee.educationAttainment || ''}</td>
+                    <td>${employee.yearsTeaching || ''}</td>
+                    <td>${employee.yearsIndustryExp || ''}</td>
+                    <td>${formatDate(employee.dateHired || '')}</td>
+                    <td>${employee.address || ''}</td>
+                    <td>${employee.contactNumber || ''}</td>
+                    <td>${employee.emailAddress || ''}</td>
+                    <td>${employee.qualification || ''}</td>
+                    <td>${employee.tmcNumber || ''}</td>
+                    <td>${formatDate(employee.tmcIssuedDate || '')}</td>
+                    <td>${formatDate(employee.tmcExpiryDate || '')}</td>
+                    <td>${employee.ncNumber || ''}</td>
+                    <td>${formatDate(employee.ncIssuedDate || '')}</td>
+                    <td>${formatDate(employee.ncExpiryDate || '')}</td>
+                    <td>${employee.nttcNumber || ''}</td>
+                    <td>${formatDate(employee.nttcIssuedDate || '')}</td>
+                    <td>${formatDate(employee.nttcExpiryDate || '')}</td>
+                    <td>${employee.withCertificate ? 'Yes' : 'No'}</td>
+                    <td>${employee.markAsOfficial ? 'Yes' : 'No'}</td>
+                    <td>
+                        <button class="btn edit-btn" onclick="window.editEmployeeRecord(this)">Edit</button>
+                        <button class="btn delete-btn" onclick="window.deleteEmployeeRecord(this)">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        /**
+         * Clears the employee form fields and resets the save/cancel buttons.
+         */
+        function clearEmployeeForm() {
+            document.getElementById('employeeId').value = '';
+            document.getElementById('employeeName').value = '';
+            document.getElementById('position').value = '';
+            document.getElementById('department').value = '';
+            document.getElementById('appointmentNature').value = '';
+            document.getElementById('educationAttainment').value = '';
+            document.getElementById('yearsTeaching').value = '';
+            document.getElementById('yearsIndustryExp').value = '';
+            document.getElementById('dateHired').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('contactNumber').value = '';
+            document.getElementById('emailAddress').value = '';
+            document.getElementById('qualification').value = '';
+            document.getElementById('tmcNumber').value = '';
+            document.getElementById('tmcIssuedDate').value = '';
+            document.getElementById('tmcExpiryDate').value = '';
+            document.getElementById('ncNumber').value = '';
+            document.getElementById('ncIssuedDate').value = '';
+            document.getElementById('ncExpiryDate').value = '';
+            document.getElementById('nttcNumber').value = '';
+            document.getElementById('nttcIssuedDate').value = '';
+            document.getElementById('nttcExpiryDate').value = '';
+            document.getElementById('withCertificate').checked = false;
+            document.getElementById('markAsOfficial').checked = false;
+            document.getElementById('nttcNaCheckbox').checked = false; // Clear N/A checkbox
+
+            editingEmployeeId = null;
+            document.getElementById('saveEmployeeBtn').textContent = 'Save Employee Record';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+
+            // Reset visibility and disabled states
+            toggleCertificationFieldsVisibility(''); // Hide cert details
+            handleNttcNaCheckboxChange(); // Reset NTTC fields based on unchecked N/A checkbox
+        }
+
+        /**
+         * Populates the form with data from the selected employee record for editing.
+         * @param {HTMLButtonElement} button The edit button clicked.
+         */
+        window.editEmployeeRecord = function(button) {
+            const row = button.closest("tr");
+            const docId = row.getAttribute('data-id');
+            const employeeToEdit = allEmployees.find(emp => emp.id === docId);
+
+            if (employeeToEdit) {
+                document.getElementById('employeeId').value = employeeToEdit.employeeId || '';
+                document.getElementById('employeeName').value = employeeToEdit.employeeName || '';
+                document.getElementById('position').value = employeeToEdit.position || '';
+                document.getElementById('department').value = employeeToEdit.department || '';
+                document.getElementById('appointmentNature').value = employeeToEdit.appointmentNature || '';
+                document.getElementById('educationAttainment').value = employeeToEdit.educationAttainment || '';
+                document.getElementById('yearsTeaching').value = employeeToEdit.yearsTeaching || '';
+                document.getElementById('yearsIndustryExp').value = employeeToEdit.yearsIndustryExp || '';
+                document.getElementById('dateHired').value = employeeToEdit.dateHired || '';
+                document.getElementById('address').value = employeeToEdit.address || '';
+                document.getElementById('contactNumber').value = employeeToEdit.contactNumber || '';
+                document.getElementById('emailAddress').value = employeeToEdit.emailAddress || '';
+                document.getElementById('qualification').value = employeeToEdit.qualification || '';
+
+                // Certification fields
+                document.getElementById('tmcNumber').value = employeeToEdit.tmcNumber || '';
+                document.getElementById('tmcIssuedDate').value = employeeToEdit.tmcIssuedDate || '';
+                document.getElementById('tmcExpiryDate').value = employeeToEdit.tmcExpiryDate || '';
+                document.getElementById('ncNumber').value = employeeToEdit.ncNumber || '';
+                document.getElementById('ncIssuedDate').value = employeeToEdit.ncIssuedDate || '';
+                document.getElementById('ncExpiryDate').value = employeeToEdit.ncExpiryDate || '';
+                
+                // Handle NTTC N/A state
+                const nttcNumberVal = employeeToEdit.nttcNumber || '';
+                const nttcNaCheckbox = document.getElementById('nttcNaCheckbox');
+
+                if (nttcNumberVal === 'N/A') {
+                    document.getElementById('nttcNumber').value = ''; // Clear the input field for N/A
+                    nttcNaCheckbox.checked = true;
+                } else {
+                    document.getElementById('nttcNumber').value = nttcNumberVal;
+                    nttcNaCheckbox.checked = false;
+                }
+
+                document.getElementById('nttcIssuedDate').value = employeeToEdit.nttcIssuedDate || '';
+                document.getElementById('nttcExpiryDate').value = employeeToEdit.nttcExpiryDate || '';
+
+                document.getElementById('withCertificate').checked = employeeToEdit.withCertificate || false;
+                document.getElementById('markAsOfficial').checked = employeeToEdit.markAsOfficial || false;
+
+                editingEmployeeId = docId;
+                document.getElementById('saveEmployeeBtn').textContent = 'Update Employee Record';
+                document.getElementById('cancelEditBtn').style.display = 'inline-block';
+
+                // Ensure certification details are visible and NTTC fields are correctly set
+                toggleCertificationFieldsVisibility(employeeToEdit.qualification || '');
+                handleNttcNaCheckboxChange(); // Apply disabled state based on checkbox
+            }
+        };
+
+        /**
+         * Saves a new or updates an existing employee record to Firestore.
+         */
+        window.saveEmployeeRecord = async function() {
+            if (!isAuthReady) {
+                window.showMessageBox("Authentication not ready. Please wait.");
+                return;
+            }
+
+            const employeeId = document.getElementById('employeeId').value.trim();
+            const employeeName = document.getElementById('employeeName').value.trim();
+            const position = document.getElementById('position').value.trim();
+            const department = document.getElementById('department').value.trim();
+            const appointmentNature = document.getElementById('appointmentNature').value.trim();
+            const educationAttainment = document.getElementById('educationAttainment').value.trim();
+            const yearsTeaching = parseInt(document.getElementById('yearsTeaching').value, 10) || 0;
+            const yearsIndustryExp = parseInt(document.getElementById('yearsIndustryExp').value, 10) || 0;
+            const dateHired = document.getElementById('dateHired').value; // YYYY-MM-DD
+            
+            const address = document.getElementById('address').value.trim();
+            const contactNumber = document.getElementById('contactNumber').value.trim();
+            const emailAddress = document.getElementById('emailAddress').value.trim();
+            const qualification = document.getElementById('qualification').value;
+
+            // Certification fields
+            const tmcNumber = document.getElementById('tmcNumber').value.trim();
+            const tmcIssuedDate = document.getElementById('tmcIssuedDate').value;
+            const tmcExpiryDate = document.getElementById('tmcExpiryDate').value;
+            const ncNumber = document.getElementById('ncNumber').value.trim();
+            const ncIssuedDate = document.getElementById('ncIssuedDate').value;
+            const ncExpiryDate = document.getElementById('ncExpiryDate').value;
+            
+            const nttcNaChecked = document.getElementById('nttcNaCheckbox').checked;
+            const nttcNumber = nttcNaChecked ? 'N/A' : document.getElementById('nttcNumber').value.trim();
+            const nttcIssuedDate = nttcNaChecked ? '' : document.getElementById('nttcIssuedDate').value;
+            const nttcExpiryDate = nttcNaChecked ? '' : document.getElementById('nttcExpiryDate').value;
+
+            const withCertificate = document.getElementById('withCertificate').checked;
+            const markAsOfficial = document.getElementById('markAsOfficial').checked;
+
+            if (!employeeId || !employeeName || !position || !dateHired) {
+                window.showMessageBox("Employee ID, Name, Position, and Date Hired are required fields.");
+                return;
+            }
+
+            const employeeData = {
+                employeeId,
+                employeeName,
+                position,
+                department,
+                appointmentNature,
+                educationAttainment,
+                yearsTeaching,
+                yearsIndustryExp,
+                dateHired,
+                address,
+                contactNumber,
+                emailAddress,
+                qualification,
+                tmcNumber,
+                tmcIssuedDate,
+                tmcExpiryDate,
+                ncNumber,
+                ncIssuedDate,
+                ncExpiryDate,
+                nttcNumber,
+                nttcIssuedDate,
+                nttcExpiryDate,
+                withCertificate,
+                markAsOfficial,
+                userId: userId,
+                // createdAt will only be set on new records
+            };
+
+            try {
+                if (editingEmployeeId) {
+                    // Update existing record
+                    await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/employees`, editingEmployeeId), employeeData);
+                    window.showMessageBox("Employee record updated successfully!");
+                } else {
+                    // Add new record
+                    employeeData.createdAt = new Date().toISOString(); // Set creation timestamp for new records
+                    const docRef = await addDoc(collection(db, `artifacts/${appId}/users/${userId}/employees`), employeeData);
+                    window.showMessageBox("Employee record added successfully! ID: " + docRef.id);
+                }
+                clearEmployeeForm(); // Clear form and reset buttons
+            } catch (e) {
+                window.showMessageBox("Error saving employee record: " + e.message);
+                console.error("Error saving employee record: ", e);
+            }
+        };
+
+        /**
+         * Deletes the selected Employee record from Firestore.
+         */
+        window.deleteEmployeeRecord = async function(button) {
+            if (!isAuthReady) {
+                window.showMessageBox("Authentication not ready. Please wait.");
+                return;
+            }
+
+            const row = button.closest("tr");
+            const docId = row.getAttribute('data-id');
+
+            window.showMessageBox("Are you sure you want to delete this employee record? Click OK to confirm.");
+
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/employees`, docId));
+                window.showMessageBox("Employee record deleted successfully!");
+            } catch (e) {
+                window.showMessageBox("Error deleting employee record: " + e.message);
+                console.error("Error deleting employee record: ", e);
+            }
+        };
+
+        /**
+         * Cancels the current edit operation and clears the form.
+         */
+        window.cancelEdit = function() {
+            clearEmployeeForm();
+        };
+
+        /**
+         * Loads qualifications from Firestore and populates the dropdown.
+         * This version combines hardcoded and Firestore qualifications, sorts them, and populates the dropdown.
+         */
+        async function loadQualifications() {
+            if (!isAuthReady) {
+                console.log("Authentication not ready, cannot load qualifications.");
+                return;
+            }
+            const qualificationSelect = document.getElementById('qualification');
+            const existingQualifications = new Set();
+            const qualificationsToDisplay = [];
+
+            // Add the initial "-- Select Qualification --" option
+            qualificationsToDisplay.push({ value: "", text: "-- Select Qualification --" });
+
+            // Hardcoded qualifications (ensure these are unique and add them to the set)
+            const hardcodedQuals = [
+                "Agricultural Crops Production NC II", "Automotive Servicing NC I",
+                "Automotive Servicing (Engine Repair) NC II", "Automotive Servicing (Electrical Repair) NC II",
+                "Automotive Servicing (Chassis Repair) NC II", "Bread and Pastry Production NC II",
+                "Carpentry NC II", "Dressmaking NC II", "Driving NC II",
+                "Electrical Installation and Maintenance NC II", "Electrical Installation and Maintenance NC III",
+                "Food and Beverage Services NC II", "Food Processing NC II", "Masonry NC II",
+                "Motorcycle/Small Engine Servicing NC II", "Organic Agriculture Production NC II",
+                "PV Systems Installation NC II", "PV Systems Servicing NC III",
+                "RAC Servicing (DomRAC) NC II", "Shielded Metal Arc Welding (SMAW) NC I",
+                "Shielded Metal Arc Welding (SMAW) NC II", "Trainers Methodology Level I",
+                "Entrepreneurship Level IV"
+            ];
+
+            hardcodedQuals.forEach(qual => {
+                if (!existingQualifications.has(qual)) {
+                    qualificationsToDisplay.push({ value: qual, text: qual });
+                    existingQualifications.add(qual);
+                }
+            });
+
+            try {
+                const qualificationsCollectionRef = collection(db, `artifacts/${appId}/public/data/qualifications`);
+                const q = query(qualificationsCollectionRef);
+                const snapshot = await getDocs(q);
+
+                snapshot.forEach((doc) => {
+                    const qual = doc.data();
+                    if (qual.name && !existingQualifications.has(qual.name)) {
+                        qualificationsToDisplay.push({ value: qual.name, text: qual.name });
+                        existingQualifications.add(qual.name);
+                    }
+                });
+
+                // Sort qualifications alphabetically, excluding the "-- Select Qualification --" option
+                const sortedQuals = qualificationsToDisplay.slice(1).sort((a, b) => a.text.localeCompare(b.text));
+                
+                // Clear all current options except the first one (if it's the default)
+                while (qualificationSelect.options.length > 0) {
+                    qualificationSelect.remove(0);
+                }
+
+                // Add the default option back first
+                const defaultOption = document.createElement('option');
+                defaultOption.value = "";
+                defaultOption.textContent = "-- Select Qualification --";
+                qualificationSelect.appendChild(defaultOption);
+
+                // Append sorted qualifications
+                sortedQuals.forEach(qual => {
+                    const option = document.createElement('option');
+                    option.value = qual.value;
+                    option.textContent = qual.text;
+                    qualificationSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Error loading qualifications:", error);
+                window.showMessageBox("Error loading qualifications: " + error.message);
+            }
+        }
+
+        /**
+         * Toggles the visibility of the input field for adding new qualifications.
+         * Updated to use new IDs and toggle 'hidden' class.
+         */
+        window.toggleAddQualificationInput = function() {
+            const container = document.getElementById('newQualificationSection');
+            container.classList.toggle('hidden');
+            if (!container.classList.contains('hidden')) {
+                document.getElementById('newQualificationName').focus();
+            } else {
+                document.getElementById('newQualificationName').value = '';
+            }
+        };
+
+        /**
+         * Saves a new qualification to Firestore and reloads the dropdown.
+         * Updated to use new IDs.
+         */
+        window.saveNewQualification = async function() {
+            if (!isAuthReady) {
+                window.showMessageBox("Authentication not ready. Please wait.");
+                console.error("Authentication not ready when trying to save new qualification.");
+                return;
+            }
+            console.log("Attempting to save new qualification. isAuthReady:", isAuthReady, "userId:", userId);
+
+            const newQualName = document.getElementById('newQualificationName').value.trim();
+            if (!newQualName) {
+                window.showMessageBox("Please enter a qualification name.");
+                return;
+            }
+
+            try {
+                // Add to a public collection for qualifications
+                await addDoc(collection(db, `artifacts/${appId}/public/data/qualifications`), {
+                    name: newQualName,
+                    createdAt: new Date().toISOString()
+                });
+                window.showMessageBox(`'${newQualName}' added successfully!`);
+                document.getElementById('newQualificationName').value = ''; // Clear input
+                document.getElementById('newQualificationSection').classList.add('hidden'); // Hide container
+                await loadQualifications(); // Reload dropdown to include the new sorted qualification
+                document.getElementById('qualification').value = newQualName; // Select the newly added one
+                toggleCertificationFieldsVisibility(newQualName); // Update visibility based on new selection
+            } catch (e) {
+                window.showMessageBox("Error adding new qualification: " + e.message);
+                console.error("Error adding new qualification: ", e);
+            }
+        };
+
+        /**
+         * Toggles the visibility of certification input fields based on qualification selection.
+         * @param {string} selectedQualification The value of the selected qualification.
+         */
+        function toggleCertificationFieldsVisibility(selectedQualification) {
+            const certificationDetailsDiv = document.getElementById('certificationDetails');
+            if (selectedQualification && selectedQualification !== "") {
+                certificationDetailsDiv.classList.remove('hidden');
+            } else {
+                certificationDetailsDiv.classList.add('hidden');
+                // Optionally clear values when hidden
+                document.getElementById('tmcNumber').value = '';
+                document.getElementById('tmcIssuedDate').value = '';
+                document.getElementById('tmcExpiryDate').value = '';
+                document.getElementById('ncNumber').value = '';
+                document.getElementById('ncIssuedDate').value = '';
+                document.getElementById('ncExpiryDate').value = '';
+                document.getElementById('nttcNumber').value = ''; // Clear NTTC Number
+                document.getElementById('nttcIssuedDate').value = '';
+                document.getElementById('nttcExpiryDate').value = '';
+                document.getElementById('nttcNaCheckbox').checked = false; // Uncheck N/A
+            }
+            // Always call handleNttcNaCheckboxChange to ensure correct state after visibility change
+            handleNttcNaCheckboxChange();
+        }
+
+        /**
+         * Handles the change event for the NTTC N/A checkbox, enabling/disabling related fields.
+         */
+        function handleNttcNaCheckboxChange() {
+            const nttcNaCheckbox = document.getElementById('nttcNaCheckbox');
+            const nttcNumberInput = document.getElementById('nttcNumber');
+            const nttcIssuedDateInput = document.getElementById('nttcIssuedDate');
+            const nttcExpiryDateInput = document.getElementById('nttcExpiryDate');
+
+            if (nttcNaCheckbox.checked) {
+                nttcNumberInput.value = 'N/A';
+                nttcNumberInput.disabled = true;
+                nttcIssuedDateInput.value = '';
+                nttcIssuedDateInput.disabled = true;
+                nttcExpiryDateInput.value = '';
+                nttcExpiryDateInput.disabled = true;
+            } else {
+                // Only clear if it was previously set to 'N/A' by the checkbox
+                if (nttcNumberInput.value === 'N/A') {
+                    nttcNumberInput.value = '';
+                }
+                nttcNumberInput.disabled = false;
+                nttcIssuedDateInput.disabled = false;
+                nttcExpiryDateInput.disabled = false;
+            }
+        }
+
+
+        // --- New Rendering Functions for Sub-Tabs ---
+
+        /**
+         * Renders the Monitoring Logs table with certification statuses.
+         * @param {Array<Object>} employeesData All employee data.
+         */
+        function renderMonitoringLogs(employeesData) {
+            const tableBody = document.getElementById("monitoringLogsTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            employeesData.forEach((employee, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${employee.employeeName || ''}</td>
+                    <td>${employee.position || ''}</td>
+                    <td>${employee.qualification || 'N/A'}</td>
+                    <td>${getCertificationStatus(employee.tmcExpiryDate)}</td>
+                    <td>${getCertificationStatus(employee.ncExpiryDate)}</td>
+                    <td>${getCertificationStatus(employee.nttcExpiryDate)}</td>
+                `;
+            });
+        }
+
+        /**
+         * Renders the List of Trainers table.
+         * @param {Array<Object>} employeesData All employee data.
+         */
+        function renderListOfTrainers(employeesData) {
+            const tableBody = document.getElementById("trainersTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            const trainers = employeesData.filter(employee =>
+                (employee.position && (employee.position.toLowerCase().includes('instructor') || employee.position.toLowerCase().includes('trainer')))
+            );
+
+            trainers.forEach((trainer, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${trainer.employeeId || ''}</td>
+                    <td>${trainer.employeeName || ''}</td>
+                    <td>${trainer.position || ''}</td>
+                    <td>${trainer.department || ''}</td>
+                    <td>${trainer.qualification || 'N/A'}</td>
+                    <td>${trainer.contactNumber || ''}</td>
+                    <td>${trainer.emailAddress || ''}</td>
+                `;
+            });
+        }
+
+        /**
+         * Renders the List of Officials table.
+         * @param {Array<Object>} employeesData All employee data.
+         */
+        function renderListOfOfficials(employeesData) {
+            const tableBody = document.getElementById("officialsTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            const officials = employeesData.filter(employee => employee.markAsOfficial);
+
+            officials.forEach((official, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${official.employeeId || ''}</td>
+                    <td>${official.employeeName || ''}</td>
+                    <td>${official.position || ''}</td>
+                    <td>${official.department || ''}</td>
+                    <td>${official.contactNumber || ''}</td>
+                    <td>${official.emailAddress || ''}</td>
+                `;
+            });
+        }
+
+        /**
+         * Renders the List of Non-Teaching Staffs table.
+         * @param {Array<Object>} employeesData All employee data.
+         */
+        function renderListOfNonTeachingStaffs(employeesData) {
+            const tableBody = document.getElementById("nonTeachingStaffsTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            const nonTeachingStaffs = employeesData.filter(employee =>
+                !(employee.position && (employee.position.toLowerCase().includes('instructor') || employee.position.toLowerCase().includes('trainer'))) &&
+                !employee.markAsOfficial // Assuming officials are not "non-teaching staff" in this context
+            );
+
+            nonTeachingStaffs.forEach((staff, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${staff.employeeId || ''}</td>
+                    <td>${staff.employeeName || ''}</td>
+                    <td>${staff.position || ''}</td>
+                    <td>${staff.department || ''}</td>
+                    <td>${staff.contactNumber || ''}</td>
+                    <td>${staff.emailAddress || ''}</td>
+                `;
+            });
+        }
+
+
+        // --- Logo Upload Functionality ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to handle individual logo uploads
+            function setupLogoUpload(imgId, inputId, localStorageKey, defaultSrc) {
+                const imgElement = document.getElementById(imgId);
+                const inputElement = document.getElementById(inputId);
+
+                // Load saved logo from localStorage on page load
+                const savedLogo = localStorage.getItem(localStorageKey);
+                if (savedLogo) {
+                    imgElement.src = savedLogo;
+                } else {
+                    // If no saved logo, set to default (or keep the HTML default)
+                    imgElement.src = defaultSrc;
+                }
+
+                // Event listener for when a file is selected
+                inputElement.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const dataUrl = e.target.result;
+                            imgElement.src = dataUrl;
+                            // Save the Data URL to localStorage for persistence
+                            localStorage.setItem(localStorageKey, dataUrl);
+                        };
+                        reader.readAsDataURL(file); // Read the file as a Data URL
+                    }
+                });
+            }
+
+            // Setup upload for each logo
+            setupLogoUpload('schoolLogo', 'uploadSchoolLogoInput', 'schoolLogoDataUrl', 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Generic_School_Logo.svg/1200px-Generic_School_Logo.svg.png');
+            setupLogoUpload('tesdaLogo', 'uploadTesdaLogoInput', 'tesdaLogoDataUrl', 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/TESDA_Logo.svg/1200px-TESDA_Logo.svg.png');
+            setupLogoUpload('bagongPilipinasLogo', 'uploadBagongPilipinasLogoInput', 'bagongPilipinasLogoDataUrl', 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Bagong_Pilipinas_logo.png/640px-Bagong_Pilipinas_logo.png');
+        });
+
+        // --- Firebase Initialization and Data Loading ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Initialize Firebase app with the appropriate config
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in anonymously if no custom token, otherwise use custom token
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for auth state changes to get the user ID
+                onAuthStateChanged(auth, async (user) => { // Made async to await loadQualifications
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        window.showMessageBox(`Signed in as: ${userId}. Loading data...`); // Use window.showMessageBox
+
+                        // Load qualifications first
+                        await loadQualifications();
+
+                        // Set up real-time listener for UTPRAS programs
+                        const utprasProgramsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/utpras_programs`);
+                        const utprasQ = query(utprasProgramsCollectionRef);
+                        onSnapshot(utprasQ, (snapshot) => {
+                            const programs = [];
+                            snapshot.forEach((doc) => {
+                                programs.push({ id: doc.id, ...doc.data() });
+                            });
+                            renderUtprasTable(programs); // Use specific render function
+                        }, (error) => {
+                            window.showMessageBox("Error fetching UTPRAS data: " + error.message);
+                            console.error("Error fetching UTPRAS data:", error);
+                        });
+
+                        // Set up real-time listener for Employee records
+                        const employeesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/employees`);
+                        const employeesQ = query(employeesCollectionRef);
+                        onSnapshot(employeesQ, (snapshot) => {
+                            allEmployees = []; // Update the global allEmployees array
+                            snapshot.forEach((doc) => {
+                                allEmployees.push({ id: doc.id, ...doc.data() });
+                            });
+                            renderEmployeeTable(allEmployees); // Render main employee table
+                            
+                            // Re-render other dynamic tables if their tabs are active
+                            const activeSubTabButton = document.querySelector('.sub-tab-button.active');
+                            if (activeSubTabButton) {
+                                const onclickAttr = activeSubTabButton.getAttribute('onclick');
+                                const match = onclickAttr ? onclickAttr.match(/switchSubTab\('([^']+)'\)/) : null;
+                                if (match && match[1]) {
+                                    // Call switchSubTab with the extracted ID to re-render the active tab
+                                    window.switchSubTab(match[1]); 
+                                } else {
+                                    // Fallback if onclick attribute is missing or malformed
+                                    console.warn("Could not determine active sub-tab from onclick attribute. Defaulting to 'employee-records'.");
+                                    window.switchSubTab('employee-records');
+                                }
+                            } else {
+                                // If no active tab is found (e.g., initial load), ensure 'employee-records' is rendered
+                                window.switchSubTab('employee-records');
+                            }
+                        }, (error) => {
+                            window.showMessageBox("Error fetching Employee data: " + error.message);
+                            console.error("Error fetching Employee data:", error);
+                        });
+
+                    } else {
+                        isAuthReady = false;
+                        window.showMessageBox("Not signed in. Please refresh to try again.");
+                    }
+                });
+
+                // Attach event listener for qualification field to toggle certification fields
+                document.getElementById('qualification').addEventListener('change', (event) => {
+                    toggleCertificationFieldsVisibility(event.target.value);
+                });
+                // Initial call to hide certification fields on load
+                toggleCertificationFieldsVisibility('');
+
+                // Attach event listeners for the new qualification buttons
+                document.getElementById('toggleAddQualificationBtn').addEventListener('click', window.toggleAddQualificationInput);
+                document.getElementById('saveNewQualificationBtn').addEventListener('click', window.saveNewQualification);
+                document.getElementById('cancelNewQualificationBtn').addEventListener('click', window.toggleAddQualificationInput);
+
+                // Attach event listener for NTTC N/A checkbox
+                document.getElementById('nttcNaCheckbox').addEventListener('change', handleNttcNaCheckboxChange);
+                // Initial call for NTTC N/A checkbox state
+                handleNttcNaCheckboxChange();
+
+
+            } catch (error) {
+                window.showMessageBox("Error initializing Firebase: " + error.message);
+                console.error("Error initializing Firebase:", error);
+            }
+        });
+    </script>
+    <!-- Include the SheetJS library for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</body>
+</html>
