@@ -1729,6 +1729,93 @@ Collection layout: ${layoutLabel}`
             return isNaN(parsed.getTime()) ? null : parsed;
         }
 
+        /**
+         * Converts employee text into consistent proper/sentence-style capitalization.
+         * Examples:
+         *   "JUAN DELA CRUZ" -> "Juan Dela Cruz"
+         *   "vocational school administrator ii" -> "Vocational School Administrator II"
+         *   "brgy. liwayway, odiongan, romblon" -> "Brgy. Liwayway, Odiongan, Romblon"
+         *
+         * Common TESDA acronyms and Roman numerals remain uppercase.
+         */
+        function toEmployeeProperCase(value) {
+            const normalized = String(value ?? '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLocaleLowerCase('en-US');
+
+            if (!normalized) return '';
+
+            let result = normalized.replace(
+                /(^|[\s\-\/,(.])([a-z])/g,
+                (match, prefix, letter) => prefix + letter.toLocaleUpperCase('en-US')
+            );
+
+            // Capitalize letters immediately after apostrophes.
+            result = result.replace(
+                /([’'])([a-z])/g,
+                (match, apostrophe, letter) => apostrophe + letter.toLocaleUpperCase('en-US')
+            );
+
+            // Preserve common acronyms and qualification-related abbreviations.
+            const uppercaseTokens = [
+                'TESDA', 'TVET', 'UTPRAS', 'RNIT', 'TMC', 'NC', 'NTTC',
+                'ICT', 'HR', 'LPT', 'OFW', 'BSIT', 'MAED', 'BSED', 'BEED',
+                'PHD', 'EDD', 'MBA', 'MA', 'BS', 'BA', 'OIC'
+            ];
+
+            uppercaseTokens.forEach(token => {
+                const pattern = new RegExp(`\\b${token}\\b`, 'gi');
+                result = result.replace(pattern, token);
+            });
+
+            // Preserve Roman numerals commonly used in positions and qualifications.
+            result = result.replace(
+                /\b(i|ii|iii|iv|v|vi|vii|viii|ix|x)\b/gi,
+                match => match.toUpperCase()
+            );
+
+            return result;
+        }
+
+        function toUppercaseCode(value) {
+            return String(value ?? '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toUpperCase();
+        }
+
+        function toLowercaseEmail(value) {
+            return String(value ?? '')
+                .replace(/\s+/g, '')
+                .trim()
+                .toLowerCase();
+        }
+
+        const employeeFieldNormalizers = Object.freeze({
+            employeeId: toUppercaseCode,
+            employeeName: toEmployeeProperCase,
+            position: toEmployeeProperCase,
+            appointmentNature: toEmployeeProperCase,
+            address: toEmployeeProperCase,
+            emailAddress: toLowercaseEmail,
+            tmcNumber: toUppercaseCode,
+            ncNumber: toUppercaseCode,
+            nttcNumber: toUppercaseCode
+        });
+
+        /**
+         * Applies the capitalization rules directly to the employee form.
+         * This is called on blur and again immediately before saving.
+         */
+        function normalizeEmployeeFormText() {
+            Object.entries(employeeFieldNormalizers).forEach(([fieldId, normalizer]) => {
+                const field = document.getElementById(fieldId);
+                if (!field || field.disabled) return;
+                field.value = normalizer(field.value);
+            });
+        }
+
         function formatDate(dateString) {
             if (!dateString) return '';
 
@@ -2561,6 +2648,7 @@ Collection layout: ${layoutLabel}`
                             <button class="btn delete-btn" onclick="window.deleteEmployeeRecord(this)">Delete</button>
                         ` : isCurrentUserEmployeeOwner(employee) ? `
                             <button class="btn edit-btn" onclick="window.editEmployeeRecord(this)">Edit My Entry</button>
+                            <button class="btn delete-btn" onclick="window.deleteEmployeeRecord(this)">Delete My Entry</button>
                         ` : '<span class="view-only-chip">View only</span>'}
                     </td>
                 `;
@@ -2706,31 +2794,34 @@ Collection layout: ${layoutLabel}`
                 editingEmployeeOwnerId = existingRecord.userId || editingEmployeeOwnerId || userId;
             }
 
-            const employeeId = document.getElementById('employeeId').value.trim();
-            const employeeName = document.getElementById('employeeName').value.trim();
-            const position = document.getElementById('position').value.trim();
+            // Normalize capitalization before validation and Firestore saving.
+            normalizeEmployeeFormText();
+
+            const employeeId = toUppercaseCode(document.getElementById('employeeId').value);
+            const employeeName = toEmployeeProperCase(document.getElementById('employeeName').value);
+            const position = toEmployeeProperCase(document.getElementById('position').value);
             const department = document.getElementById('department').value.trim();
-            const appointmentNature = document.getElementById('appointmentNature').value.trim();
+            const appointmentNature = toEmployeeProperCase(document.getElementById('appointmentNature').value);
             const educationAttainment = document.getElementById('educationAttainment').value.trim();
             const yearsTeaching = parseInt(document.getElementById('yearsTeaching').value, 10) || 0;
             const yearsIndustryExp = parseInt(document.getElementById('yearsIndustryExp').value, 10) || 0;
             const dateHired = document.getElementById('dateHired').value; // YYYY-MM-DD
             
-            const address = document.getElementById('address').value.trim();
+            const address = toEmployeeProperCase(document.getElementById('address').value);
             const contactNumber = document.getElementById('contactNumber').value.trim();
-            const emailAddress = document.getElementById('emailAddress').value.trim();
+            const emailAddress = toLowercaseEmail(document.getElementById('emailAddress').value);
             const qualification = document.getElementById('qualification').value;
 
             // Certification fields
-            const tmcNumber = document.getElementById('tmcNumber').value.trim();
+            const tmcNumber = toUppercaseCode(document.getElementById('tmcNumber').value);
             const tmcIssuedDate = document.getElementById('tmcIssuedDate').value;
             const tmcExpiryDate = document.getElementById('tmcExpiryDate').value;
-            const ncNumber = document.getElementById('ncNumber').value.trim();
+            const ncNumber = toUppercaseCode(document.getElementById('ncNumber').value);
             const ncIssuedDate = document.getElementById('ncIssuedDate').value;
             const ncExpiryDate = document.getElementById('ncExpiryDate').value;
             
             const nttcNaChecked = document.getElementById('nttcNaCheckbox').checked;
-            const nttcNumber = nttcNaChecked ? 'N/A' : document.getElementById('nttcNumber').value.trim();
+            const nttcNumber = nttcNaChecked ? 'N/A' : toUppercaseCode(document.getElementById('nttcNumber').value);
             const nttcIssuedDate = nttcNaChecked ? '' : document.getElementById('nttcIssuedDate').value;
             const nttcExpiryDate = nttcNaChecked ? '' : document.getElementById('nttcExpiryDate').value;
 
@@ -2808,26 +2899,39 @@ Collection layout: ${layoutLabel}`
          * Deletes the selected Employee record from Firestore.
          */
         window.deleteEmployeeRecord = async function(button) {
-            if (!requireAdministrator('delete employee records')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
             }
 
-            const row = button.closest("tr");
-            const docId = row.getAttribute('data-id');
+            const row = button ? button.closest("tr") : null;
+            const docId = row ? row.getAttribute('data-id') : '';
+            const employeeToDelete = allEmployees.find(employee => employee.id === docId);
 
-            const confirmed = window.confirm("Are you sure you want to delete this employee record?");
-            if (!confirmed) {
+            if (!employeeToDelete) {
+                window.showMessageBox('The selected employee record could not be found. Please refresh the page.');
                 return;
             }
 
+            if (!canCurrentUserEditEmployee(employeeToDelete)) {
+                window.showMessageBox('You may delete only the employee records submitted from this browser. Only the administrator can delete other records.');
+                return;
+            }
+
+            const recordLabel = employeeToDelete.employeeName || employeeToDelete.employeeId || 'this employee record';
+            const confirmed = window.confirm(`Are you sure you want to permanently delete ${recordLabel}?`);
+            if (!confirmed) return;
+
             try {
+                button.disabled = true;
+                button.textContent = 'Deleting…';
                 await deleteDoc(doc(db, COLLECTIONS.employees, docId));
                 window.showMessageBox("Employee record deleted successfully!");
             } catch (e) {
                 window.showMessageBox("Error deleting employee record: " + e.message);
                 console.error("Error deleting employee record: ", e);
+                button.disabled = false;
+                button.textContent = isAdminMode ? 'Delete' : 'Delete My Entry';
             }
         };
 
@@ -3352,6 +3456,14 @@ Collection layout: ${layoutLabel}`
             const nttcNa = document.getElementById('nttcNaCheckbox');
             const markAsOfficial = document.getElementById('markAsOfficial');
             const employeeIdInput = document.getElementById('employeeId');
+
+            // Automatically correct capitalization when the user leaves a field.
+            Object.entries(employeeFieldNormalizers).forEach(([fieldId, normalizer]) => {
+                const field = document.getElementById(fieldId);
+                field?.addEventListener('blur', () => {
+                    if (!field.disabled) field.value = normalizer(field.value);
+                });
+            });
 
             employeeIdInput?.addEventListener('input', () => {
                 if (editingEmployeeId) return;
