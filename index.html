@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified TVET Program Registration and Accreditation System</title>
+    <title>UTPRAS Monitoring — Admin Controlled v2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -35,47 +35,10 @@
             transform: scale(1.05);
         }
 
-        /* Main system header — explicit styles prevent Tailwind preflight from hiding/shrinking it */
-        .system-header {
-            max-width: 1180px;
-            margin: 0 auto 22px;
-            padding: 22px 24px 24px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #ffffff 0%, #eff8ff 55%, #dbeafe 100%);
-            border: 1px solid #bfdbfe;
-            box-shadow: 0 10px 28px rgba(15, 76, 129, 0.14);
+        h1 {
             text-align: center;
-        }
-
-        .system-header .header-logos {
-            margin-bottom: 14px;
-        }
-
-        .system-title {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            position: relative !important;
-            z-index: 2;
-            width: 100%;
-            margin: 0 !important;
-            padding: 0 8px;
-            text-align: center;
-            color: #0f3f73 !important;
-            font-family: 'Inter', Arial, sans-serif !important;
-            font-size: clamp(1.45rem, 3vw, 2.45rem) !important;
-            line-height: 1.22 !important;
-            font-weight: 800 !important;
-            letter-spacing: -0.02em;
-            text-shadow: 0 1px 0 rgba(255,255,255,.85);
-            overflow-wrap: anywhere;
-        }
-
-        .system-subtitle {
-            margin: 8px 0 0;
-            color: #475569;
-            font-size: clamp(.83rem, 1.5vw, 1rem);
-            font-weight: 600;
+            margin-bottom: 30px;
+            color: #2c3e50;
         }
 
         /* Main Tabs Styling */
@@ -664,25 +627,25 @@
 }
 
 @media screen and (max-width: 480px) {
-  .system-header { padding: 16px 12px 18px; border-radius: 13px; }
-  .header-logos { gap: 12px; }
-  .header-logos img { width: 68px; }
-  .system-title { font-size: 1.35rem !important; }
-  .system-subtitle { font-size: .78rem; }
+  .header-logos img { 
+    width: 80px;
+  }
 }
     </style>
 </head>
 <body>
 
-    <header class="system-header" aria-labelledby="systemTitle">
-        <div class="header-logos">
-            <img id="bagongPilipinasLogo" src="images/Picbagong pilipinas.png" alt="Bagong Pilipinas Logo">
-            <img id="schoolLogo" src="images/Picture1.png" alt="School Logo">
-            <img id="tesdaLogo" src="images/tesdalogo.png" alt="TESDA Logo">
-        </div>
-        <h1 id="systemTitle" class="system-title">Unified TVET Program Registration and Accreditation System</h1>
-        <p class="system-subtitle">UTPRAS Employee and Qualifications Monitoring Portal</p>
-    </header>
+    <div class="header-logos">
+        <img id="bagongPilipinasLogo" src="images/Picbagong pilipinas.png" alt="Bagong Pilipinas Logo">
+        <img id="schoolLogo" src="images/Picture1.png" alt="School Logo">
+        <img id="tesdaLogo" src="images/tesdalogo.png" alt="TESDA Logo">
+          
+
+
+    </div>
+
+
+    <h1>Unified TVET Program Registration and Accreditation System</h1>
 
     <div class="firebase-status-row">
         <div id="firebaseStatus" class="firebase-status firebase-status-connecting" role="status" aria-live="polite">
@@ -1743,11 +1706,22 @@ Collection layout: ${layoutLabel}`
             const ncNumber = (employee.ncNumber || '').trim().toUpperCase();
             const nttcNumber = (employee.nttcNumber || '').trim().toUpperCase();
 
-            const hasValidNC = ncNumber !== '' && ncNumber !== 'N/A';
-            const hasValidNTTC = nttcNumber !== '' && nttcNumber !== 'N/A';
+            const hasValidNC =
+                ncNumber !== '' &&
+                ncNumber !== 'N/A';
 
-            // Trainer kapag Instructor/Trainer ang position, o may parehong NC at NTTC.
-            // Hindi nito inaalis ang employee sa Officials o Non-Teaching lists.
+            const hasValidNTTC =
+                nttcNumber !== '' &&
+                nttcNumber !== 'N/A';
+
+            /*
+             * The employee appears in the List of Trainers when:
+             * 1. The regular position contains "Instructor" or "Trainer"; OR
+             * 2. The employee has both a valid NC and a valid NTTC.
+             *
+             * Official status and non-teaching status do not remove the
+             * employee from the List of Trainers.
+             */
             return positionIsTrainer || (hasValidNC && hasValidNTTC);
         }
 
@@ -2584,10 +2558,29 @@ Collection layout: ${layoutLabel}`
          * @param {Array<Object>} employeesData All employee data.
          */
         function renderListOfTrainers(employeesData) {
-            const tableBody = document.getElementById("trainersTable").getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing rows
+            const table = document.getElementById('trainersTable');
 
-            const trainers = employeesData.filter(isTrainerRecord);
+            if (!table) {
+                console.warn('Trainers table was not found.');
+                return;
+            }
+
+            const tableBody = table.getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            const trainers = employeesData.filter(employee =>
+                isTrainerRecord(employee)
+            );
+
+            if (trainers.length === 0) {
+                const emptyRow = tableBody.insertRow();
+                emptyRow.innerHTML = `
+                    <td colspan="8" class="text-center text-gray-500">
+                        No trainer records found.
+                    </td>
+                `;
+                return;
+            }
 
             trainers.forEach((trainer, index) => {
                 const row = tableBody.insertRow();
@@ -2609,10 +2602,34 @@ Collection layout: ${layoutLabel}`
          * @param {Array<Object>} employeesData All employee data.
          */
         function renderListOfOfficials(employeesData) {
-            const tableBody = document.getElementById("officialsTable").getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing rows
+            const table = document.getElementById('officialsTable');
 
-            const officials = employeesData.filter(employee => employee.markAsOfficial);
+            if (!table) {
+                console.warn('Officials table was not found.');
+                return;
+            }
+
+            const tableBody = table.getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            /*
+             * An employee remains in the List of Officials whenever
+             * "Mark as Official" is checked, even when the same employee
+             * also appears in the Trainers or Non-Teaching lists.
+             */
+            const officials = employeesData.filter(employee =>
+                employee.markAsOfficial === true
+            );
+
+            if (officials.length === 0) {
+                const emptyRow = tableBody.insertRow();
+                emptyRow.innerHTML = `
+                    <td colspan="8" class="text-center text-gray-500">
+                        No official records found.
+                    </td>
+                `;
+                return;
+            }
 
             officials.forEach((official, index) => {
                 const row = tableBody.insertRow();
@@ -2634,21 +2651,44 @@ Collection layout: ${layoutLabel}`
          * @param {Array<Object>} employeesData All employee data.
          */
         function renderListOfNonTeachingStaffs(employeesData) {
-            const tableBody = document.getElementById("nonTeachingStaffsTable").getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing rows
+            const table = document.getElementById('nonTeachingStaffsTable');
 
+            if (!table) {
+                console.warn('Non-Teaching Staffs table was not found.');
+                return;
+            }
+
+            const tableBody = table.getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            /*
+             * Non-teaching classification is based only on the employee's
+             * regular position. An employee stays in this list even when:
+             * - the employee has NC and NTTC and also appears as a trainer; or
+             * - the employee is marked as an official.
+             *
+             * Only positions containing "Instructor" or "Trainer" are
+             * excluded from the Non-Teaching Staffs list.
+             */
             const nonTeachingStaffs = employeesData.filter(employee => {
                 const position = (employee.position || '').trim().toLowerCase();
 
-                // Basehan ng Non-Teaching list ang regular position lamang.
-                // Kahit may NC/NTTC o marked as Official, mananatili rito kung
-                // hindi Instructor o Trainer ang regular position.
                 const regularPositionIsTeaching =
                     position.includes('instructor') ||
                     position.includes('trainer');
 
                 return !regularPositionIsTeaching;
             });
+
+            if (nonTeachingStaffs.length === 0) {
+                const emptyRow = tableBody.insertRow();
+                emptyRow.innerHTML = `
+                    <td colspan="7" class="text-center text-gray-500">
+                        No non-teaching staff records found.
+                    </td>
+                `;
+                return;
+            }
 
             nonTeachingStaffs.forEach((staff, index) => {
                 const row = tableBody.insertRow();
