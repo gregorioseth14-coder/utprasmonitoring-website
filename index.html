@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTPRAS Monitoring System</title>
+    <title>UTPRAS Monitoring System — Interactive Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -706,6 +706,541 @@
         }
 
 
+        /* Interactive dashboard enhancements */
+        .dashboard-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            min-height: 150px;
+            background:
+                radial-gradient(circle at 88% 12%, rgba(255,255,255,0.22), transparent 26%),
+                radial-gradient(circle at 73% 110%, rgba(56,189,248,0.30), transparent 36%),
+                linear-gradient(135deg, #0b3f72 0%, #1266ad 52%, #1498c8 100%);
+        }
+
+        .dashboard-hero::before {
+            content: "";
+            position: absolute;
+            left: -42px;
+            bottom: -62px;
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            border: 26px solid rgba(255,255,255,0.07);
+        }
+
+        .dashboard-hero-copy,
+        .dashboard-hero-actions {
+            position: relative;
+            z-index: 2;
+        }
+
+        .dashboard-hero-copy {
+            max-width: 690px;
+        }
+
+        .dashboard-hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 10px;
+            padding: 6px 11px;
+            border: 1px solid rgba(255,255,255,0.32);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.13);
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .dashboard-hero-kicker::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #86efac;
+            box-shadow: 0 0 0 5px rgba(134,239,172,0.18);
+        }
+
+        .dashboard-hero-actions {
+            display: flex;
+            flex-direction: column;
+            min-width: 205px;
+            gap: 9px;
+        }
+
+        .dashboard-hero-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,0.34);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.14);
+            color: #ffffff;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dashboard-hero-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.24);
+            box-shadow: 0 7px 18px rgba(0,0,0,0.15);
+        }
+
+        .dashboard-hero-btn.primary {
+            background: #ffffff;
+            color: #0f4c81;
+            border-color: #ffffff;
+        }
+
+        .dashboard-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 0 0 18px;
+            padding: 11px 14px;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #f8fbff, #ffffff);
+            color: #475569;
+            font-size: 0.88rem;
+            font-weight: 650;
+        }
+
+        .dashboard-live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: #047857;
+            font-weight: 800;
+        }
+
+        .dashboard-live-status::before {
+            content: "";
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16,185,129,0.14);
+            animation: dashboardPulse 1.8s infinite;
+        }
+
+        @keyframes dashboardPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.8); opacity: 0.65; }
+        }
+
+        .dashboard-grid {
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        }
+
+        .dashboard-card {
+            display: block;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+
+        button.dashboard-card {
+            font: inherit;
+        }
+
+        .dashboard-card::after {
+            content: "";
+            position: absolute;
+            right: -30px;
+            bottom: -38px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--card-tint, rgba(37,99,235,0.08));
+            transition: transform 0.25s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 14px 30px rgba(15,23,42,0.13);
+            border-color: var(--card-accent, #93c5fd);
+        }
+
+        .dashboard-card:hover::after {
+            transform: scale(1.22);
+        }
+
+        .dashboard-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .dashboard-card-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--card-tint, #eff6ff);
+            color: var(--card-accent, #2563eb);
+            font-size: 1.05rem;
+            font-weight: 900;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-card-arrow {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            font-weight: 900;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-card:hover .dashboard-card-arrow {
+            transform: translateX(4px);
+            color: var(--card-accent, #2563eb);
+        }
+
+        .dashboard-card.employees { --card-accent: #4f46e5; --card-tint: rgba(79,70,229,0.10); }
+        .dashboard-card.trainers { --card-accent: #0284c7; --card-tint: rgba(2,132,199,0.10); }
+        .dashboard-card.officials { --card-accent: #7c3aed; --card-tint: rgba(124,58,237,0.10); }
+        .dashboard-card.programs { --card-accent: #059669; --card-tint: rgba(5,150,105,0.10); }
+        .dashboard-card.expiring { --card-accent: #ea580c; --card-tint: rgba(234,88,12,0.11); }
+
+        .dashboard-card .card-number {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-card .card-note {
+            position: relative;
+            z-index: 1;
+            min-height: 40px;
+        }
+
+        .dashboard-visual-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            margin: 22px 0 26px;
+        }
+
+        .dashboard-panel {
+            min-width: 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 8px 22px rgba(15,23,42,0.07);
+        }
+
+        .dashboard-panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 17px;
+        }
+
+        .dashboard-panel-title {
+            margin: 0;
+            color: #172554;
+            font-size: 1.04rem;
+            font-weight: 850;
+        }
+
+        .dashboard-panel-subtitle {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 0.82rem;
+        }
+
+        .dashboard-panel-badge {
+            flex: 0 0 auto;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        .dashboard-donut-layout {
+            display: grid;
+            grid-template-columns: minmax(145px, 0.8fr) minmax(190px, 1.2fr);
+            align-items: center;
+            gap: 18px;
+        }
+
+        .dashboard-donut {
+            --donut-bg: conic-gradient(#cbd5e1 0 100%);
+            position: relative;
+            width: min(175px, 100%);
+            aspect-ratio: 1;
+            margin: auto;
+            border-radius: 50%;
+            background: var(--donut-bg);
+            box-shadow: inset 0 0 0 1px rgba(15,23,42,0.04), 0 8px 18px rgba(15,23,42,0.09);
+            transition: background 0.35s ease;
+        }
+
+        .dashboard-donut::after {
+            content: "";
+            position: absolute;
+            inset: 23%;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 0 1px #e2e8f0;
+        }
+
+        .dashboard-donut-center {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .dashboard-donut-center strong {
+            color: #0f172a;
+            font-size: 1.75rem;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .dashboard-donut-center span {
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .dashboard-chart-legend {
+            display: grid;
+            gap: 8px;
+        }
+
+        .dashboard-legend-item {
+            display: grid;
+            grid-template-columns: 12px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 9px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            color: #334155;
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .dashboard-legend-item:hover {
+            transform: translateX(3px);
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+
+        .dashboard-legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .dashboard-legend-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .dashboard-legend-value {
+            color: #0f172a;
+            font-size: 0.83rem;
+            font-weight: 900;
+        }
+
+        .dashboard-bars {
+            display: grid;
+            gap: 13px;
+        }
+
+        .dashboard-bar-row {
+            display: grid;
+            grid-template-columns: minmax(86px, 0.7fr) minmax(120px, 2fr) 38px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dashboard-bar-label {
+            color: #334155;
+            font-size: 0.82rem;
+            font-weight: 760;
+        }
+
+        .dashboard-bar-track {
+            height: 11px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e2e8f0;
+        }
+
+        .dashboard-bar-fill {
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--bar-color, linear-gradient(90deg, #2563eb, #38bdf8));
+            transition: width 0.55s ease;
+        }
+
+        .dashboard-bar-value {
+            color: #0f172a;
+            font-size: 0.86rem;
+            font-weight: 900;
+            text-align: right;
+        }
+
+        .dashboard-insights {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin: 0 0 24px;
+        }
+
+        .dashboard-insight-card {
+            padding: 15px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 13px;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+        }
+
+        .dashboard-insight-card span {
+            display: block;
+            margin-bottom: 6px;
+            color: #64748b;
+            font-size: 0.73rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .dashboard-insight-card strong {
+            display: block;
+            color: #0f172a;
+            font-size: 0.94rem;
+            line-height: 1.35;
+        }
+
+        .program-summary-card {
+            display: block;
+            width: 100%;
+            border-top: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .program-summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(15,23,42,0.10);
+            border-color: #93c5fd;
+        }
+
+        .dashboard-table-panel {
+            margin-top: 24px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 8px 22px rgba(15,23,42,0.07);
+        }
+
+        .dashboard-table-tools {
+            display: grid;
+            grid-template-columns: minmax(180px, 1.6fr) repeat(2, minmax(145px, 0.7fr)) auto;
+            gap: 10px;
+            margin: 14px 0 8px;
+        }
+
+        .dashboard-filter-control {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            background: #ffffff;
+            color: #0f172a;
+            font: inherit;
+            font-size: 0.88rem;
+        }
+
+        .dashboard-filter-control:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.13);
+        }
+
+        .dashboard-clear-btn {
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .dashboard-clear-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .dashboard-result-count {
+            margin: 8px 0 0;
+            color: #64748b;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        @media screen and (max-width: 960px) {
+            .dashboard-hero { align-items: flex-start; flex-direction: column; }
+            .dashboard-hero-actions { width: 100%; min-width: 0; flex-direction: row; flex-wrap: wrap; }
+            .dashboard-hero-btn { width: auto; flex: 1 1 180px; }
+            .dashboard-visual-grid { grid-template-columns: 1fr; }
+            .dashboard-insights { grid-template-columns: 1fr; }
+            .dashboard-table-tools { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media screen and (max-width: 640px) {
+            .dashboard-donut-layout { grid-template-columns: 1fr; }
+            .dashboard-table-tools { grid-template-columns: 1fr; }
+            .dashboard-bar-row { grid-template-columns: 78px minmax(90px, 1fr) 32px; }
+            .dashboard-toolbar { align-items: flex-start; flex-direction: column; }
+        }
+
+
         /* Trainer qualification filter */
         .trainer-filter-bar {
             display: flex;
@@ -864,92 +1399,212 @@
     <!-- Content for Dashboard Tab -->
     <div id="dashboard-content" class="tab-content">
         <div class="dashboard-hero">
-            <h2>UTPRAS Monitoring Dashboard</h2>
-            <p>Real-time overview of trainers, registered programs, and certification expiry alerts.</p>
+            <div class="dashboard-hero-copy">
+                <div class="dashboard-hero-kicker">Live Monitoring Overview</div>
+                <h2>UTPRAS Monitoring Dashboard</h2>
+                <p>Explore real-time employee, trainer, program, and credential information. Click the cards and chart labels to open the corresponding records.</p>
+            </div>
+            <div class="dashboard-hero-actions">
+                <button type="button" class="dashboard-hero-btn primary" onclick="window.dashboardOpenTrainers()">View Trainers →</button>
+                <button type="button" class="dashboard-hero-btn" onclick="window.dashboardOpenPrograms()">Browse UTPRAS Programs</button>
+                <button type="button" class="dashboard-hero-btn" id="dashboardRefreshBtn" onclick="window.refreshInteractiveDashboard()">Refresh Dashboard</button>
+            </div>
+        </div>
+
+        <div class="dashboard-toolbar">
+            <div><strong>Last updated:</strong> <span id="dashboardLastUpdated">Waiting for Firebase data…</span></div>
+            <div class="dashboard-live-status">Live Firebase data</div>
         </div>
 
         <div class="dashboard-grid">
-            <div class="dashboard-card">
+            <button type="button" class="dashboard-card employees" onclick="window.dashboardOpenEmployees()" title="Open Employee Records">
+                <div class="dashboard-card-top"><span class="dashboard-card-icon">E</span><span class="dashboard-card-arrow">→</span></div>
+                <div class="card-label">Total Employees</div>
+                <div class="card-number" id="dashboardEmployeeCount">0</div>
+                <div class="card-note">All employee records currently stored in the monitoring database.</div>
+            </button>
+            <button type="button" class="dashboard-card trainers" onclick="window.dashboardOpenTrainers()" title="Open List of Trainers">
+                <div class="dashboard-card-top"><span class="dashboard-card-icon">T</span><span class="dashboard-card-arrow">→</span></div>
                 <div class="card-label">Number of Trainers</div>
                 <div class="card-number" id="dashboardTrainerCount">0</div>
-                <div class="card-note">Includes Instructor/Trainer positions and employees with both valid NC and NTTC, including officials.</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-label">Total Registered Programs</div>
+                <div class="card-note">Instructor/Trainer positions or employees with both valid NC and NTTC.</div>
+            </button>
+            <button type="button" class="dashboard-card officials" onclick="window.dashboardOpenOfficials()" title="Open List of Officials">
+                <div class="dashboard-card-top"><span class="dashboard-card-icon">O</span><span class="dashboard-card-arrow">→</span></div>
+                <div class="card-label">Officials</div>
+                <div class="card-number" id="dashboardOfficialCount">0</div>
+                <div class="card-note">Employees currently marked with an official designation.</div>
+            </button>
+            <button type="button" class="dashboard-card programs" onclick="window.dashboardOpenPrograms()" title="Open UTPRAS Programs">
+                <div class="dashboard-card-top"><span class="dashboard-card-icon">P</span><span class="dashboard-card-arrow">→</span></div>
+                <div class="card-label">Registered Programs</div>
                 <div class="card-number" id="dashboardTotalPrograms">0</div>
-                <div class="card-note">Split into five UTPRAS program types below.</div>
-            </div>
-            <div class="dashboard-card">
+                <div class="card-note">All registered qualifications across the five program categories.</div>
+            </button>
+            <button type="button" class="dashboard-card expiring" onclick="window.dashboardOpenExpirySection()" title="View Expiring Credentials">
+                <div class="dashboard-card-top"><span class="dashboard-card-icon">!</span><span class="dashboard-card-arrow">↓</span></div>
                 <div class="card-label">Expiring Credentials</div>
                 <div class="card-number" id="dashboardExpiringCount">0</div>
-                <div class="card-note">TMC, NC, and NTTC expiring within 1 month.</div>
+                <div class="card-note">TMC, NC, and NTTC records expiring within the next 30 days.</div>
+            </button>
+        </div>
+
+        <div class="dashboard-insights">
+            <div class="dashboard-insight-card">
+                <span>Most Common Trainer Qualification</span>
+                <strong id="dashboardTopQualification">No qualification data yet</strong>
+            </div>
+            <div class="dashboard-insight-card">
+                <span>Nearest Credential Expiry</span>
+                <strong id="dashboardNearestExpiry">No upcoming expiry within 30 days</strong>
+            </div>
+            <div class="dashboard-insight-card">
+                <span>Records Requiring Attention</span>
+                <strong id="dashboardAttentionSummary">No immediate credential alerts</strong>
             </div>
         </div>
 
-        <h3 class="dashboard-section-title">Number of Registered Programs by Type</h3>
+        <div class="dashboard-visual-grid">
+            <section class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <div>
+                        <h3 class="dashboard-panel-title">Program Distribution</h3>
+                        <p class="dashboard-panel-subtitle">Click a category to open its UTPRAS records.</p>
+                    </div>
+                    <span class="dashboard-panel-badge">Interactive</span>
+                </div>
+                <div class="dashboard-donut-layout">
+                    <div id="dashboardProgramDonut" class="dashboard-donut" aria-label="Program distribution chart">
+                        <div class="dashboard-donut-center"><strong id="dashboardProgramDonutTotal">0</strong><span>Programs</span></div>
+                    </div>
+                    <div id="dashboardProgramLegend" class="dashboard-chart-legend"></div>
+                </div>
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <div>
+                        <h3 class="dashboard-panel-title">With Training Regulations by NC Level</h3>
+                        <p class="dashboard-panel-subtitle">Number of NC I, NC II, NC III, and NC IV programs.</p>
+                    </div>
+                    <span class="dashboard-panel-badge">NC Levels</span>
+                </div>
+                <div id="dashboardNCLevelBars" class="dashboard-bars"></div>
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <div>
+                        <h3 class="dashboard-panel-title">Workforce Classification</h3>
+                        <p class="dashboard-panel-subtitle">Independent counts of trainers, officials, and non-teaching staff.</p>
+                    </div>
+                    <span class="dashboard-panel-badge">Employees</span>
+                </div>
+                <div id="dashboardWorkforceBars" class="dashboard-bars"></div>
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <div>
+                        <h3 class="dashboard-panel-title">Trainer Credential Health</h3>
+                        <p class="dashboard-panel-subtitle">Status of all TMC, NC, and NTTC credentials recorded for trainers.</p>
+                    </div>
+                    <span class="dashboard-panel-badge">Credentials</span>
+                </div>
+                <div class="dashboard-donut-layout">
+                    <div id="dashboardCredentialDonut" class="dashboard-donut" aria-label="Credential health chart">
+                        <div class="dashboard-donut-center"><strong id="dashboardCredentialTotal">0</strong><span>Credentials</span></div>
+                    </div>
+                    <div id="dashboardCredentialLegend" class="dashboard-chart-legend"></div>
+                </div>
+            </section>
+        </div>
+
+        <h3 class="dashboard-section-title">Registered Programs by Type</h3>
         <div class="program-summary-grid">
-            <div class="program-summary-card">
+            <button type="button" class="program-summary-card" onclick="window.dashboardOpenProgramCategory('With Training Regulations')">
                 <h4>With Training Regulations</h4>
                 <div class="program-count" id="dashboardWithTRCount">0</div>
-            </div>
-            <div class="program-summary-card">
+            </button>
+            <button type="button" class="program-summary-card" onclick="window.dashboardOpenProgramCategory('Mobile Training Programs')">
                 <h4>Mobile Training Programs</h4>
                 <div class="program-count" id="dashboardMobileCount">0</div>
-            </div>
-            <div class="program-summary-card">
+            </button>
+            <button type="button" class="program-summary-card" onclick="window.dashboardOpenProgramCategory('Recognized TVET Programs')">
                 <h4>Recognized TVET Programs</h4>
                 <div class="program-count" id="dashboardRecognizedCount">0</div>
-            </div>
-            <div class="program-summary-card">
+            </button>
+            <button type="button" class="program-summary-card" onclick="window.dashboardOpenProgramCategory('Micro-Credential Courses')">
                 <h4>Micro-Credential Courses</h4>
                 <div class="program-count" id="dashboardMicroCount">0</div>
-            </div>
-            <div class="program-summary-card">
+            </button>
+            <button type="button" class="program-summary-card" onclick="window.dashboardOpenProgramCategory('Diploma Programs')">
                 <h4>Diploma Programs</h4>
                 <div class="program-count" id="dashboardDiplomaCount">0</div>
-            </div>
+            </button>
         </div>
 
         <h3 class="dashboard-section-title">With Training Regulations by NC Level</h3>
         <div class="program-summary-grid" aria-label="With Training Regulations programs by NC level">
-            <div class="program-summary-card nc-level-card">
-                <h4>NC I</h4>
-                <div class="program-count" id="dashboardNCIConfigCount">0</div>
-            </div>
-            <div class="program-summary-card nc-level-card">
-                <h4>NC II</h4>
-                <div class="program-count" id="dashboardNCIIConfigCount">0</div>
-            </div>
-            <div class="program-summary-card nc-level-card">
-                <h4>NC III</h4>
-                <div class="program-count" id="dashboardNCIIIConfigCount">0</div>
-            </div>
-            <div class="program-summary-card nc-level-card">
-                <h4>NC IV</h4>
-                <div class="program-count" id="dashboardNCIVConfigCount">0</div>
-            </div>
+            <button type="button" class="program-summary-card nc-level-card" onclick="window.dashboardOpenProgramCategory('With Training Regulations')">
+                <h4>NC I</h4><div class="program-count" id="dashboardNCIConfigCount">0</div>
+            </button>
+            <button type="button" class="program-summary-card nc-level-card" onclick="window.dashboardOpenProgramCategory('With Training Regulations')">
+                <h4>NC II</h4><div class="program-count" id="dashboardNCIIConfigCount">0</div>
+            </button>
+            <button type="button" class="program-summary-card nc-level-card" onclick="window.dashboardOpenProgramCategory('With Training Regulations')">
+                <h4>NC III</h4><div class="program-count" id="dashboardNCIIIConfigCount">0</div>
+            </button>
+            <button type="button" class="program-summary-card nc-level-card" onclick="window.dashboardOpenProgramCategory('With Training Regulations')">
+                <h4>NC IV</h4><div class="program-count" id="dashboardNCIVConfigCount">0</div>
+            </button>
         </div>
 
-        <h3 class="dashboard-section-title">List of Trainers with TMC, NC, or NTTC Expiring Within 1 Month</h3>
-        <div class="employee-table-container">
-            <table id="dashboardExpiryTable">
-                <thead>
-                    <tr>
-                        <th>No.</th>
-                        <th>Trainer Name</th>
-                        <th>Position</th>
-                        <th>Qualification</th>
-                        <th>Credential</th>
-                        <th>Expiry Date</th>
-                        <th>Days Remaining</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td colspan="8" class="empty-dashboard-note">No expiring credentials within 1 month.</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <section id="dashboardExpirySection" class="dashboard-table-panel">
+            <div class="dashboard-panel-header">
+                <div>
+                    <h3 class="dashboard-panel-title">Upcoming Trainer Credential Expirations</h3>
+                    <p class="dashboard-panel-subtitle">Search and filter TMC, NC, or NTTC credentials expiring within 30 days.</p>
+                </div>
+                <span class="dashboard-panel-badge">Action Required</span>
+            </div>
+            <div class="dashboard-table-tools">
+                <input id="dashboardExpirySearch" class="dashboard-filter-control" type="search" placeholder="Search trainer, position, or qualification…" oninput="window.applyDashboardExpiryFilters()">
+                <select id="dashboardExpiryTypeFilter" class="dashboard-filter-control" onchange="window.applyDashboardExpiryFilters()">
+                    <option value="all">All credentials</option>
+                    <option value="TMC">TMC only</option>
+                    <option value="NC">NC only</option>
+                    <option value="NTTC">NTTC only</option>
+                </select>
+                <select id="dashboardExpiryUrgencyFilter" class="dashboard-filter-control" onchange="window.applyDashboardExpiryFilters()">
+                    <option value="30">Within 30 days</option>
+                    <option value="14">Within 14 days</option>
+                    <option value="7">Within 7 days</option>
+                    <option value="0">Expires today</option>
+                </select>
+                <button type="button" class="dashboard-clear-btn" onclick="window.clearDashboardExpiryFilters()">Clear</button>
+            </div>
+            <div id="dashboardExpiryResultCount" class="dashboard-result-count">Showing 0 credential alerts.</div>
+            <div class="employee-table-container">
+                <table id="dashboardExpiryTable">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Trainer Name</th>
+                            <th>Position</th>
+                            <th>Qualification</th>
+                            <th>Credential</th>
+                            <th>Expiry Date</th>
+                            <th>Days Remaining</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="8" class="empty-dashboard-note">No expiring credentials within 30 days.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
     <!-- Content for Employee Monitoring Tab -->
@@ -2176,48 +2831,130 @@ Collection layout: ${layoutLabel}`
             return counts;
         }
 
-        function renderDashboard() {
-            const trainers = allEmployees.filter(isTrainerRecord);
-            const categoryCounts = {};
-            const withTRNCLevelCounts = getWithTRNCLevelCounts(allUtprasPrograms);
-            UTPRAS_CATEGORIES.forEach(category => categoryCounts[category] = 0);
-            allUtprasPrograms.forEach(program => {
-                const category = getProgramCategory(program);
-                if (categoryCounts[category] === undefined) categoryCounts[category] = 0;
-                categoryCounts[category]++;
-            });
+        let dashboardExpiringRows = [];
 
-            const expiringRows = getExpiringCredentialRows(allEmployees);
-
-            const setText = (id, value) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = value;
+        function animateDashboardNumber(id, targetValue) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            const target = Number(targetValue) || 0;
+            const current = Number(element.textContent.replace(/[^0-9.-]/g, '')) || 0;
+            if (current === target) {
+                element.textContent = String(target);
+                return;
+            }
+            const duration = 420;
+            const startTime = performance.now();
+            const difference = target - current;
+            const tick = now => {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                element.textContent = String(Math.round(current + difference * eased));
+                if (progress < 1) requestAnimationFrame(tick);
             };
+            requestAnimationFrame(tick);
+        }
 
-            setText('dashboardTrainerCount', trainers.length);
-            setText('dashboardTotalPrograms', allUtprasPrograms.length);
-            setText('dashboardExpiringCount', expiringRows.length);
-            setText('dashboardWithTRCount', categoryCounts['With Training Regulations'] || 0);
-            setText('dashboardMobileCount', categoryCounts['Mobile Training Programs'] || 0);
-            setText('dashboardRecognizedCount', categoryCounts['Recognized TVET Programs'] || 0);
-            setText('dashboardMicroCount', categoryCounts['Micro-Credential Courses'] || 0);
-            setText('dashboardDiplomaCount', categoryCounts['Diploma Programs'] || 0);
-            setText('dashboardNCIConfigCount', withTRNCLevelCounts['NC I']);
-            setText('dashboardNCIIConfigCount', withTRNCLevelCounts['NC II']);
-            setText('dashboardNCIIIConfigCount', withTRNCLevelCounts['NC III']);
-            setText('dashboardNCIVConfigCount', withTRNCLevelCounts['NC IV']);
+        function renderDashboardDonut(donutId, legendId, totalId, items, centerLabel) {
+            const donut = document.getElementById(donutId);
+            const legend = document.getElementById(legendId);
+            const totalElement = document.getElementById(totalId);
+            const total = items.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+            if (totalElement) totalElement.textContent = String(total);
+            if (!donut || !legend) return;
 
-            const tableBody = document.getElementById('dashboardExpiryTable')?.getElementsByTagName('tbody')[0];
-            if (!tableBody) return;
-            tableBody.innerHTML = '';
-
-            if (expiringRows.length === 0) {
-                const emptyRow = tableBody.insertRow();
-                emptyRow.innerHTML = `<td colspan="8" class="empty-dashboard-note">No trainer TMC, NC, or NTTC records are expiring within 1 month.</td>`;
+            if (total <= 0) {
+                donut.style.setProperty('--donut-bg', 'conic-gradient(#e2e8f0 0 100%)');
+                legend.innerHTML = '<div class="empty-dashboard-note" style="padding:12px">No data available yet.</div>';
                 return;
             }
 
-            expiringRows.forEach((item, index) => {
+            let cursor = 0;
+            const stops = [];
+            items.forEach(item => {
+                const start = cursor;
+                cursor += (Number(item.value) || 0) / total * 100;
+                stops.push(`${item.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`);
+            });
+            donut.style.setProperty('--donut-bg', `conic-gradient(${stops.join(', ')})`);
+
+            legend.innerHTML = items.map(item => {
+                const value = Number(item.value) || 0;
+                const percentage = total ? Math.round(value / total * 100) : 0;
+                const action = item.action ? `onclick="${item.action}"` : '';
+                return `
+                    <button type="button" class="dashboard-legend-item" ${action} title="${item.label}: ${value} (${percentage}%)">
+                        <span class="dashboard-legend-swatch" style="background:${item.color}"></span>
+                        <span class="dashboard-legend-label">${item.label}</span>
+                        <span class="dashboard-legend-value">${value}</span>
+                    </button>
+                `;
+            }).join('');
+            donut.setAttribute('aria-label', `${centerLabel}: ${total}`);
+        }
+
+        function renderDashboardBars(containerId, items) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const maxValue = Math.max(1, ...items.map(item => Number(item.value) || 0));
+            container.innerHTML = items.map(item => {
+                const value = Number(item.value) || 0;
+                const width = value === 0 ? 0 : Math.max(5, value / maxValue * 100);
+                return `
+                    <div class="dashboard-bar-row" title="${item.label}: ${value}">
+                        <div class="dashboard-bar-label">${item.label}</div>
+                        <div class="dashboard-bar-track"><div class="dashboard-bar-fill" style="--bar-color:${item.color};width:${width.toFixed(1)}%"></div></div>
+                        <div class="dashboard-bar-value">${value}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getDashboardCredentialHealth(trainers) {
+            const counts = { Active: 0, Expiring: 0, Expired: 0, Missing: 0 };
+            trainers.forEach(employee => {
+                [employee.tmcExpiryDate, employee.ncExpiryDate, employee.nttcExpiryDate].forEach(dateValue => {
+                    if (!dateValue) {
+                        counts.Missing += 1;
+                        return;
+                    }
+                    const days = getDaysUntilExpiry(dateValue);
+                    if (days === null) counts.Missing += 1;
+                    else if (days < 0) counts.Expired += 1;
+                    else if (days <= 30) counts.Expiring += 1;
+                    else counts.Active += 1;
+                });
+            });
+            return counts;
+        }
+
+        function getDashboardTopQualification(trainers) {
+            const counts = new Map();
+            trainers.forEach(employee => {
+                const qualification = String(employee.qualification || '').trim();
+                if (!qualification) return;
+                counts.set(qualification, (counts.get(qualification) || 0) + 1);
+            });
+            const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+            return sorted.length ? `${sorted[0][0]} (${sorted[0][1]} trainer${sorted[0][1] === 1 ? '' : 's'})` : 'No qualification data yet';
+        }
+
+        function renderDashboardExpiryTable(rows) {
+            const tableBody = document.getElementById('dashboardExpiryTable')?.getElementsByTagName('tbody')[0];
+            const resultCount = document.getElementById('dashboardExpiryResultCount');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            if (resultCount) {
+                resultCount.textContent = `Showing ${rows.length} of ${dashboardExpiringRows.length} credential alert${dashboardExpiringRows.length === 1 ? '' : 's'}.`;
+            }
+
+            if (rows.length === 0) {
+                const emptyRow = tableBody.insertRow();
+                emptyRow.innerHTML = `<td colspan="8" class="empty-dashboard-note">No credential alerts match the selected filters.</td>`;
+                return;
+            }
+
+            rows.forEach((item, index) => {
                 const row = tableBody.insertRow();
                 const statusText = item.daysRemaining === 0 ? 'Expires Today' : `${item.daysRemaining} day(s) left`;
                 row.innerHTML = `
@@ -2231,6 +2968,186 @@ Collection layout: ${layoutLabel}`
                     <td><span class="expiry-badge">${statusText}</span></td>
                 `;
             });
+        }
+
+        window.applyDashboardExpiryFilters = function() {
+            const queryValue = String(document.getElementById('dashboardExpirySearch')?.value || '').trim().toLowerCase();
+            const typeValue = document.getElementById('dashboardExpiryTypeFilter')?.value || 'all';
+            const urgencyValue = Number(document.getElementById('dashboardExpiryUrgencyFilter')?.value ?? 30);
+            const filtered = dashboardExpiringRows.filter(item => {
+                const searchable = `${item.employeeName} ${item.position} ${item.qualification}`.toLowerCase();
+                const matchesSearch = !queryValue || searchable.includes(queryValue);
+                const matchesType = typeValue === 'all' || item.credentialType === typeValue;
+                const matchesUrgency = item.daysRemaining <= urgencyValue;
+                return matchesSearch && matchesType && matchesUrgency;
+            });
+            renderDashboardExpiryTable(filtered);
+        };
+
+        window.clearDashboardExpiryFilters = function() {
+            const search = document.getElementById('dashboardExpirySearch');
+            const type = document.getElementById('dashboardExpiryTypeFilter');
+            const urgency = document.getElementById('dashboardExpiryUrgencyFilter');
+            if (search) search.value = '';
+            if (type) type.value = 'all';
+            if (urgency) urgency.value = '30';
+            renderDashboardExpiryTable(dashboardExpiringRows);
+        };
+
+        window.dashboardOpenEmployees = function() {
+            window.switchMainTab('employee-monitoring');
+            window.switchSubTab('employee-records');
+            document.getElementById('employee-records-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.dashboardOpenTrainers = function() {
+            window.switchMainTab('employee-monitoring');
+            window.switchSubTab('list-of-trainers');
+            document.getElementById('list-of-trainers-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.dashboardOpenOfficials = function() {
+            window.switchMainTab('employee-monitoring');
+            window.switchSubTab('list-of-officials');
+            document.getElementById('list-of-officials-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.dashboardOpenPrograms = function() {
+            window.switchMainTab('utpras-programs');
+            document.getElementById('utpras-programs-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.dashboardOpenProgramCategory = function(category) {
+            window.switchMainTab('utpras-programs');
+            window.switchUtprasCategory(category);
+            document.getElementById('utpras-programs-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.dashboardOpenExpirySection = function() {
+            document.getElementById('dashboardExpirySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.refreshInteractiveDashboard = function() {
+            const button = document.getElementById('dashboardRefreshBtn');
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Refreshing…';
+            }
+            renderDashboard();
+            window.setTimeout(() => {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = 'Refresh Dashboard';
+                }
+            }, 550);
+        };
+
+        function renderDashboard() {
+            const trainers = allEmployees.filter(isTrainerRecord);
+            const officials = allEmployees.filter(employee => employee.markAsOfficial === true);
+            const nonTeaching = allEmployees.filter(employee => {
+                const position = String(employee.position || '').toLowerCase();
+                const isTeachingPosition = position.includes('instructor') || position.includes('trainer');
+                return !isTeachingPosition && employee.markAsOfficial !== true;
+            });
+            const categoryCounts = {};
+            const withTRNCLevelCounts = getWithTRNCLevelCounts(allUtprasPrograms);
+            UTPRAS_CATEGORIES.forEach(category => categoryCounts[category] = 0);
+            allUtprasPrograms.forEach(program => {
+                const category = getProgramCategory(program);
+                if (categoryCounts[category] === undefined) categoryCounts[category] = 0;
+                categoryCounts[category] += 1;
+            });
+
+            dashboardExpiringRows = getExpiringCredentialRows(allEmployees);
+            const credentialHealth = getDashboardCredentialHealth(trainers);
+
+            animateDashboardNumber('dashboardEmployeeCount', allEmployees.length);
+            animateDashboardNumber('dashboardTrainerCount', trainers.length);
+            animateDashboardNumber('dashboardOfficialCount', officials.length);
+            animateDashboardNumber('dashboardTotalPrograms', allUtprasPrograms.length);
+            animateDashboardNumber('dashboardExpiringCount', dashboardExpiringRows.length);
+            animateDashboardNumber('dashboardWithTRCount', categoryCounts['With Training Regulations'] || 0);
+            animateDashboardNumber('dashboardMobileCount', categoryCounts['Mobile Training Programs'] || 0);
+            animateDashboardNumber('dashboardRecognizedCount', categoryCounts['Recognized TVET Programs'] || 0);
+            animateDashboardNumber('dashboardMicroCount', categoryCounts['Micro-Credential Courses'] || 0);
+            animateDashboardNumber('dashboardDiplomaCount', categoryCounts['Diploma Programs'] || 0);
+            animateDashboardNumber('dashboardNCIConfigCount', withTRNCLevelCounts['NC I']);
+            animateDashboardNumber('dashboardNCIIConfigCount', withTRNCLevelCounts['NC II']);
+            animateDashboardNumber('dashboardNCIIIConfigCount', withTRNCLevelCounts['NC III']);
+            animateDashboardNumber('dashboardNCIVConfigCount', withTRNCLevelCounts['NC IV']);
+
+            const lastUpdated = document.getElementById('dashboardLastUpdated');
+            if (lastUpdated) {
+                lastUpdated.textContent = new Intl.DateTimeFormat('en-PH', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                }).format(new Date());
+            }
+
+            const topQualification = document.getElementById('dashboardTopQualification');
+            if (topQualification) topQualification.textContent = getDashboardTopQualification(trainers);
+
+            const nearestExpiry = document.getElementById('dashboardNearestExpiry');
+            if (nearestExpiry) {
+                const nearest = dashboardExpiringRows[0];
+                nearestExpiry.textContent = nearest
+                    ? `${nearest.employeeName} — ${nearest.credentialType}, ${nearest.daysRemaining === 0 ? 'expires today' : nearest.daysRemaining + ' day(s) remaining'}`
+                    : 'No upcoming expiry within 30 days';
+            }
+
+            const attention = document.getElementById('dashboardAttentionSummary');
+            if (attention) {
+                const expiredCount = credentialHealth.Expired;
+                attention.textContent = expiredCount > 0
+                    ? `${expiredCount} expired credential${expiredCount === 1 ? '' : 's'} and ${dashboardExpiringRows.length} upcoming alert${dashboardExpiringRows.length === 1 ? '' : 's'}`
+                    : dashboardExpiringRows.length > 0
+                        ? `${dashboardExpiringRows.length} credential${dashboardExpiringRows.length === 1 ? '' : 's'} expiring within 30 days`
+                        : 'No immediate credential alerts';
+            }
+
+            const programColors = ['#2563eb', '#0891b2', '#7c3aed', '#f59e0b', '#059669'];
+            renderDashboardDonut(
+                'dashboardProgramDonut',
+                'dashboardProgramLegend',
+                'dashboardProgramDonutTotal',
+                UTPRAS_CATEGORIES.map((category, index) => ({
+                    label: category,
+                    value: categoryCounts[category] || 0,
+                    color: programColors[index],
+                    action: `window.dashboardOpenProgramCategory('${category.replace(/'/g, "\\'")}')`
+                })),
+                'Program distribution'
+            );
+
+            renderDashboardBars('dashboardNCLevelBars', [
+                { label: 'NC I', value: withTRNCLevelCounts['NC I'], color: 'linear-gradient(90deg,#0f766e,#2dd4bf)' },
+                { label: 'NC II', value: withTRNCLevelCounts['NC II'], color: 'linear-gradient(90deg,#0369a1,#38bdf8)' },
+                { label: 'NC III', value: withTRNCLevelCounts['NC III'], color: 'linear-gradient(90deg,#6d28d9,#a78bfa)' },
+                { label: 'NC IV', value: withTRNCLevelCounts['NC IV'], color: 'linear-gradient(90deg,#c2410c,#fb923c)' }
+            ]);
+
+            renderDashboardBars('dashboardWorkforceBars', [
+                { label: 'Employees', value: allEmployees.length, color: 'linear-gradient(90deg,#4338ca,#818cf8)' },
+                { label: 'Trainers', value: trainers.length, color: 'linear-gradient(90deg,#0369a1,#38bdf8)' },
+                { label: 'Officials', value: officials.length, color: 'linear-gradient(90deg,#6d28d9,#c084fc)' },
+                { label: 'Non-Teaching', value: nonTeaching.length, color: 'linear-gradient(90deg,#047857,#34d399)' }
+            ]);
+
+            renderDashboardDonut(
+                'dashboardCredentialDonut',
+                'dashboardCredentialLegend',
+                'dashboardCredentialTotal',
+                [
+                    { label: 'Active', value: credentialHealth.Active, color: '#10b981' },
+                    { label: 'Expiring ≤30 days', value: credentialHealth.Expiring, color: '#f59e0b' },
+                    { label: 'Expired', value: credentialHealth.Expired, color: '#ef4444' },
+                    { label: 'Not recorded', value: credentialHealth.Missing, color: '#94a3b8' }
+                ],
+                'Trainer credential health'
+            );
+
+            window.applyDashboardExpiryFilters();
         }
 
         window.switchUtprasCategory = function(category) {
