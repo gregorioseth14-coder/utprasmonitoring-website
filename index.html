@@ -707,6 +707,76 @@
             padding: 24px;
         }
 
+
+        /* Trainer qualification filter */
+        .trainer-filter-bar {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 0 0 16px;
+            padding: 14px 16px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-left: 5px solid #2563eb;
+            border-radius: 10px;
+        }
+
+        .trainer-filter-field {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .trainer-filter-field label {
+            display: block;
+            margin-bottom: 6px;
+            color: #1e3a8a;
+            font-size: 0.92rem;
+            font-weight: 800;
+        }
+
+        #trainerQualificationFilter {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        #trainerQualificationFilter:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .trainer-filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .trainer-show-all-btn {
+            margin: 0;
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .trainer-show-all-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .trainer-filter-result {
+            color: #475569;
+            font-size: 0.88rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
 @media screen and (max-width: 720px) {
   .system-title-card {
     margin: 8px auto 18px;
@@ -1146,6 +1216,25 @@
         <!-- List of Trainers Sub-Tab Content -->
         <div id="list-of-trainers-content" class="sub-tab-content hidden">
             <h3 class="text-lg font-medium text-blue-700 mb-4">List of Trainers</h3>
+
+            <div class="trainer-filter-bar">
+                <div class="trainer-filter-field">
+                    <label for="trainerQualificationFilter">Filter Trainers by Qualification</label>
+                    <select id="trainerQualificationFilter"
+                            onchange="window.filterTrainersByQualification(this.value)">
+                        <option value="ALL">All Qualifications</option>
+                    </select>
+                </div>
+                <div class="trainer-filter-actions">
+                    <span id="trainerFilterResult" class="trainer-filter-result">Showing all trainers</span>
+                    <button type="button"
+                            class="btn trainer-show-all-btn"
+                            onclick="window.showAllTrainers()">
+                        Show All Trainers
+                    </button>
+                </div>
+            </div>
+
             <div class="employee-table-container">
                 <table id="trainersTable">
                     <thead>
@@ -3187,8 +3276,66 @@ Collection layout: ${layoutLabel}`
             });
         }
 
+        let selectedTrainerQualification = 'ALL';
+
         /**
-         * Renders the List of Trainers table.
+         * Rebuilds the qualification dropdown using qualifications that are
+         * actually assigned to trainer records. The current selection is
+         * preserved whenever possible.
+         */
+        function populateTrainerQualificationFilter(employeesData) {
+            const select = document.getElementById('trainerQualificationFilter');
+            if (!select) return;
+
+            const previousSelection = selectedTrainerQualification || select.value || 'ALL';
+            const qualifications = [...new Set(
+                employeesData
+                    .filter(employee => isTrainerRecord(employee))
+                    .map(employee => String(employee.qualification || '').trim())
+                    .filter(qualification =>
+                        qualification !== '' &&
+                        qualification.toUpperCase() !== 'N/A'
+                    )
+            )].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+            select.innerHTML = '';
+
+            const allOption = document.createElement('option');
+            allOption.value = 'ALL';
+            allOption.textContent = 'All Qualifications';
+            select.appendChild(allOption);
+
+            qualifications.forEach(qualification => {
+                const option = document.createElement('option');
+                option.value = qualification;
+                option.textContent = qualification;
+                select.appendChild(option);
+            });
+
+            if (previousSelection === 'ALL' || qualifications.includes(previousSelection)) {
+                select.value = previousSelection;
+            } else {
+                select.value = 'ALL';
+            }
+
+            selectedTrainerQualification = select.value;
+        }
+
+        window.filterTrainersByQualification = function(qualification) {
+            selectedTrainerQualification = qualification || 'ALL';
+            renderListOfTrainers(allEmployees);
+        };
+
+        window.showAllTrainers = function() {
+            selectedTrainerQualification = 'ALL';
+            const select = document.getElementById('trainerQualificationFilter');
+            if (select) select.value = 'ALL';
+            renderListOfTrainers(allEmployees);
+        };
+
+        /**
+         * Renders the List of Trainers table and supports filtering by an
+         * exact qualification selected from the dropdown.
          * @param {Array<Object>} employeesData All employee data.
          */
         function renderListOfTrainers(employeesData) {
@@ -3199,18 +3346,43 @@ Collection layout: ${layoutLabel}`
                 return;
             }
 
+            populateTrainerQualificationFilter(employeesData);
+
             const tableBody = table.getElementsByTagName('tbody')[0];
             tableBody.innerHTML = '';
 
-            const trainers = employeesData.filter(employee =>
-                isTrainerRecord(employee)
-            );
+            const allTrainers = employeesData
+                .filter(employee => isTrainerRecord(employee))
+                .slice()
+                .sort((a, b) => {
+                    const qualificationCompare = String(a.qualification || '')
+                        .localeCompare(String(b.qualification || ''), undefined, { sensitivity: 'base' });
+                    if (qualificationCompare !== 0) return qualificationCompare;
+                    return String(a.employeeName || '')
+                        .localeCompare(String(b.employeeName || ''), undefined, { sensitivity: 'base' });
+                });
+
+            const trainers = selectedTrainerQualification === 'ALL'
+                ? allTrainers
+                : allTrainers.filter(employee =>
+                    String(employee.qualification || '').trim() === selectedTrainerQualification
+                );
+
+            const resultLabel = document.getElementById('trainerFilterResult');
+            if (resultLabel) {
+                resultLabel.textContent = selectedTrainerQualification === 'ALL'
+                    ? `Showing all ${allTrainers.length} trainer record(s)`
+                    : `Showing ${trainers.length} of ${allTrainers.length} trainer record(s)`;
+            }
 
             if (trainers.length === 0) {
                 const emptyRow = tableBody.insertRow();
+                const message = selectedTrainerQualification === 'ALL'
+                    ? 'No trainer records found.'
+                    : `No trainers found for ${selectedTrainerQualification}.`;
                 emptyRow.innerHTML = `
                     <td colspan="8" class="text-center text-gray-500">
-                        No trainer records found.
+                        ${message}
                     </td>
                 `;
                 return;
