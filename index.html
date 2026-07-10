@@ -11,6 +11,7 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 40px;
+            overflow-x: hidden;
             background-color: #e0f2f7; /* Light blue representing TESDA */
             color: #333;
         }
@@ -35,10 +36,22 @@
             transform: scale(1.05);
         }
 
+        /* Responsive main title: visible without becoming oversized or clipped */
         h1 {
+            display: block;
+            width: 100%;
+            max-width: 1100px;
+            box-sizing: border-box;
+            margin: 10px auto 28px;
+            padding: 0 16px;
             text-align: center;
-            margin-bottom: 30px;
-            color: #2c3e50;
+            color: #0f3f73;
+            font-family: 'Inter', Arial, sans-serif;
+            font-size: clamp(1.65rem, 3.2vw, 2.75rem);
+            line-height: 1.18;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            overflow-wrap: anywhere;
         }
 
         /* Main Tabs Styling */
@@ -2898,8 +2911,11 @@ Collection layout: ${layoutLabel}`
             applyRoleUI();
             firebaseInitializationPromise = initializeFirebaseConnection().catch((error) => {
                 const friendly = friendlyFirebaseError(error);
-                // Show one useful startup message. The Test Firebase button can retry afterward.
-                window.showMessageBox('Firebase connection failed: ' + friendly);
+                // When opened locally, keep the warning in the status bar without blocking the page.
+                // Firebase will work after the same index.html is opened through GitHub Pages/HTTPS.
+                if (window.location.protocol !== 'file:') {
+                    window.showMessageBox('Firebase connection failed: ' + friendly);
+                }
                 return Promise.reject(error);
             });
             // Prevent an unhandled rejection while retaining the promise for the Test button.
