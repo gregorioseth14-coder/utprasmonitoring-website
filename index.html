@@ -770,7 +770,7 @@
             <div class="dashboard-card">
                 <div class="card-label">Number of Trainers</div>
                 <div class="card-number" id="dashboardTrainerCount">0</div>
-                <div class="card-note">Based on Instructor/Trainer positions or employees with both NC and NTTC.</div>
+                <div class="card-note">Includes Instructor/Trainer positions and employees with both valid NC and NTTC, including officials.</div>
             </div>
             <div class="dashboard-card">
                 <div class="card-label">Total Registered Programs</div>
@@ -2891,13 +2891,14 @@ Collection layout: ${layoutLabel}`
             tableBody.innerHTML = '';
 
             /*
-             * Non-teaching classification is based only on the employee's
-             * regular position. An employee stays in this list even when:
-             * - the employee has NC and NTTC and also appears as a trainer; or
-             * - the employee is marked as an official.
+             * An employee appears in the Non-Teaching Staffs list only when:
+             * 1. The regular position does not contain "Instructor" or "Trainer"; and
+             * 2. "Mark as Official" is not checked.
              *
-             * Only positions containing "Instructor" or "Trainer" are
-             * excluded from the Non-Teaching Staffs list.
+             * When an employee is marked as official, the record stays in the
+             * List of Officials and is removed from the Non-Teaching Staffs list.
+             * The same official can still appear in the List of Trainers when
+             * the position is Instructor/Trainer or when both NC and NTTC are valid.
              */
             const nonTeachingStaffs = employeesData.filter(employee => {
                 const position = (employee.position || '').trim().toLowerCase();
@@ -2906,7 +2907,9 @@ Collection layout: ${layoutLabel}`
                     position.includes('instructor') ||
                     position.includes('trainer');
 
-                return !regularPositionIsTeaching;
+                const isOfficial = employee.markAsOfficial === true;
+
+                return !regularPositionIsTeaching && !isOfficial;
             });
 
             if (nonTeachingStaffs.length === 0) {
