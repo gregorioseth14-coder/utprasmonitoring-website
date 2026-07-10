@@ -26,14 +26,12 @@
 
         .header-logos img {
             width: 100px;
-            height: auto;
+            height: 100px;
+            object-fit: contain;
             border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .header-logos img:hover {
-            transform: scale(1.05);
+            cursor: default;
+            pointer-events: none;
+            user-select: none;
         }
 
         /* Main system title: separated from the controls so it is never covered */
@@ -806,9 +804,21 @@
 <body>
 
     <div class="header-logos">
-        <img id="bagongPilipinasLogo" src="images/Picbagong pilipinas.png" alt="Bagong Pilipinas Logo">
-        <img id="schoolLogo" src="images/Picture1.png" alt="School Logo">
-        <img id="tesdaLogo" src="images/tesdalogo.png" alt="TESDA Logo">
+        <img id="bagongPilipinasLogo"
+             src="./images/Picbagong pilipinas.png"
+             onerror="this.onerror=null;this.src='./Picbagong pilipinas.png';"
+             alt="Bagong Pilipinas Logo"
+             draggable="false">
+        <img id="schoolLogo"
+             src="./images/Picture1.png"
+             onerror="this.onerror=null;this.src='./Picture1.png';"
+             alt="School Logo"
+             draggable="false">
+        <img id="tesdaLogo"
+             src="./images/tesdalogo.png"
+             onerror="this.onerror=null;this.src='./tesdalogo.png';"
+             alt="TESDA Logo"
+             draggable="false">
           
 
 
@@ -1358,10 +1368,6 @@
     </div>
 
 
-    <!-- Hidden file inputs for each logo -->
-    <input type="file" id="uploadSchoolLogoInput" accept="image/*" style="display: none;">
-    <input type="file" id="uploadTesdaLogoInput" accept="image/*" style="display: none;">
-    <input type="file" id="uploadBagongPilipinasLogoInput" accept="image/*" style="display: none;">
 
     <!-- Custom Message Box -->
     <div id="messageBox" class="message-box">
@@ -3514,69 +3520,7 @@ Collection layout: ${layoutLabel}`
         }
 
 
-        // --- Logo Upload Functionality ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Function to handle individual logo uploads
-            function setupLogoUpload(imgId, inputId, localStorageKey, defaultSrc) {
-                const imgElement = document.getElementById(imgId);
-                const inputElement = document.getElementById(inputId);
-
-                if (!imgElement || !inputElement) {
-                    console.warn(`Logo upload setup skipped. Missing element: ${imgId} or ${inputId}`);
-                    return;
-                }
-
-                // Make each logo clickable and keyboard-accessible.
-                imgElement.style.cursor = 'pointer';
-                imgElement.setAttribute('title', 'Click to change this logo');
-                imgElement.setAttribute('role', 'button');
-                imgElement.setAttribute('tabindex', '0');
-
-                imgElement.addEventListener('click', () => {
-                    inputElement.click();
-                });
-
-                imgElement.addEventListener('keydown', (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        inputElement.click();
-                    }
-                });
-
-                // Load saved logo from localStorage on page load
-                const savedLogo = localStorage.getItem(localStorageKey);
-                if (savedLogo) {
-                    imgElement.src = savedLogo;
-                } else {
-                    // If no saved logo, set to default/local image.
-                    imgElement.src = defaultSrc;
-                }
-
-                // Event listener for when a file is selected
-                inputElement.addEventListener('change', function(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const dataUrl = e.target.result;
-                            imgElement.src = dataUrl;
-                            // Save the Data URL to localStorage for persistence in this browser.
-                            localStorage.setItem(localStorageKey, dataUrl);
-                            window.showMessageBox('Logo updated successfully.');
-                        };
-                        reader.readAsDataURL(file); // Read the file as a Data URL
-                    }
-
-                    // Reset the file input so the same image can be selected again if needed.
-                    inputElement.value = '';
-                });
-            }
-
-            // Setup upload for each logo
-            setupLogoUpload('bagongPilipinasLogo', 'uploadBagongPilipinasLogoInput', 'bagongPilipinasLogoDataUrl', 'images/Picbagong pilipinas.png');
-            setupLogoUpload('schoolLogo', 'uploadSchoolLogoInput', 'schoolLogoDataUrl', 'images/Picture1.png');
-            setupLogoUpload('tesdaLogo', 'uploadTesdaLogoInput', 'tesdaLogoDataUrl', 'images/tesdalogo.png');
-        });
+        // Logos are fixed site assets and cannot be changed by users.
 
         // --- Firebase Initialization and Data Loading ---
         let unsubscribePrograms = null;
