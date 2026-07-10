@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTPRAS & Employee Monitoring</title>
+    <title>UTPRAS Monitoring — Admin Controlled v2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -274,6 +274,28 @@
             margin-top: 10px;
         }
 
+
+        .official-designation-panel {
+            grid-column: 1 / -1;
+            margin-top: 4px;
+            padding: 16px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-left: 5px solid #f97316;
+            border-radius: 8px;
+        }
+
+        .official-designation-panel label {
+            color: #9a3412;
+            font-weight: 700;
+        }
+
+        .official-designation-panel .field-help {
+            margin: 7px 0 0;
+            color: #7c2d12;
+            font-size: 0.85rem;
+        }
+
         .form-actions {
             grid-column: 1 / -1; /* Span across all columns */
             text-align: center;
@@ -402,6 +424,72 @@
         @media screen and (max-width: 720px) {
             .firebase-status-row { flex-direction: column; }
             .firebase-test-btn { width: 100%; }
+        }
+
+
+        /* Access control and administrator UI */
+        .access-control-row {
+            max-width: 760px;
+            margin: -10px auto 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        }
+        .access-mode-text { display: flex; flex-direction: column; gap: 3px; }
+        .access-mode-text strong { color: #0f172a; }
+        .access-mode-text span { color: #64748b; font-size: 0.88rem; }
+        .role-badge {
+            display: inline-flex;
+            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+        .role-badge-viewer { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .role-badge-admin { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .auth-action-btn {
+            border: none;
+            border-radius: 9px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .auth-login-btn { background: #1d4ed8; color: #fff; }
+        .auth-login-btn:hover { background: #1e40af; }
+        .auth-logout-btn { background: #475569; color: #fff; }
+        .auth-logout-btn:hover { background: #334155; }
+        .employee-mode-notice {
+            margin: 0 0 18px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 650;
+        }
+        .employee-mode-notice.admin { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+        .view-only-chip {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.78rem;
+            font-weight: 800;
+            border: 1px solid #cbd5e1;
+        }
+        @media screen and (max-width: 720px) {
+            .access-control-row { flex-direction: column; align-items: stretch; }
+            .auth-action-btn { width: 100%; }
         }
 
         /* Professional Dashboard Styling */
@@ -568,6 +656,20 @@
         </button>
     </div>
 
+    <div class="access-control-row">
+        <div class="access-mode-text">
+            <span id="roleBadge" class="role-badge role-badge-viewer">VIEWER / DATA SUBMITTER</span>
+            <strong id="roleTitle">Public user access</strong>
+            <span id="roleDescription">You may submit employee data, identify an official designation when applicable, and view dashboards. Editing and deletion are restricted to the administrator.</span>
+        </div>
+        <button type="button" id="adminLoginBtn" class="auth-action-btn auth-login-btn" onclick="window.adminLoginWithGoogle()">
+            Admin Login with Google
+        </button>
+        <button type="button" id="adminLogoutBtn" class="auth-action-btn auth-logout-btn hidden" onclick="window.adminLogout()">
+            Logout Administrator
+        </button>
+    </div>
+
 
     <!-- Main Tabs Navigation -->
     <div class="main-tabs">
@@ -592,7 +694,7 @@
             <div class="dashboard-card">
                 <div class="card-label">Total Registered Programs</div>
                 <div class="card-number" id="dashboardTotalPrograms">0</div>
-                <div class="card-note">Split into four UTPRAS program types below.</div>
+                <div class="card-note">Split into five UTPRAS program types below.</div>
             </div>
             <div class="dashboard-card">
                 <div class="card-label">Expiring Credentials</div>
@@ -618,6 +720,10 @@
             <div class="program-summary-card">
                 <h4>Micro-Credential Courses</h4>
                 <div class="program-count" id="dashboardMicroCount">0</div>
+            </div>
+            <div class="program-summary-card">
+                <h4>Diploma Programs</h4>
+                <div class="program-count" id="dashboardDiplomaCount">0</div>
             </div>
         </div>
 
@@ -661,6 +767,9 @@
         <!-- Employee Records Sub-Tab Content -->
         <div id="employee-records-content" class="sub-tab-content">
             <h3 class="text-lg font-medium text-blue-700 mb-4">Add New Employee Record</h3>
+            <div id="employeeFormModeNotice" class="employee-mode-notice">
+                Submit your employee information below. You may mark the record as official and select the applicable designation. After submission, only the administrator can edit or delete the saved record.
+            </div>
             <div class="employee-form-grid">
                 <div>
                     <label for="employeeId">Employee ID</label>
@@ -723,8 +832,8 @@
                                 <!-- Hardcoded options will be dynamically sorted and added by JS -->
                             </select>
                         </div>
-                        <button type="button" id="toggleAddQualificationBtn"
-                                 class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 add-qual-btn">
+                        <button type="button" id="toggleAddQualificationBtn" data-admin-only
+                                 class="hidden bg-blue-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 add-qual-btn">
                             Add Qualification
                         </button>
                     </div>
@@ -806,6 +915,17 @@
                     <input type="checkbox" id="markAsOfficial">
                     <label for="markAsOfficial">Mark as Official</label>
                 </div>
+                <div id="officialDesignationSection" class="official-designation-panel hidden">
+                    <label for="officialDesignation">Official Designation</label>
+                    <select id="officialDesignation" name="officialDesignation">
+                        <option value="">-- Select Official Designation --</option>
+                        <option value="Vocational School Administrator II">Vocational School Administrator II</option>
+                        <option value="Vocational Instruction Supervisor I">Vocational Instruction Supervisor I</option>
+                        <option value="Nurse II/Registrar Designate">Nurse II/Registrar Designate</option>
+                        <option value="Acting Guidance Councilor">Acting Guidance Councilor</option>
+                    </select>
+                    <p class="field-help">This field is required when “Mark as Official” is checked.</p>
+                </div>
                 <div class="form-actions">
                     <button class="btn save-btn" id="saveEmployeeBtn" onclick="window.saveEmployeeRecord()">Save Employee Record</button>
                     <button class="btn cancel-btn" id="cancelEditBtn" onclick="window.cancelEdit()">Cancel</button>
@@ -842,6 +962,7 @@
                             <th>NTTC Expiry</th>
                             <th>Certificate</th>
                             <th>Official</th>
+                            <th>Official Designation</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -910,6 +1031,7 @@
                             <th>Employee ID</th>
                             <th>Name</th>
                             <th>Position</th>
+                            <th>Official Designation</th>
                             <th>Department</th>
                             <th>Contact</th>
                             <th>Email</th>
@@ -966,12 +1088,13 @@
             <button class="sub-tab-button utpras-category-button" onclick="window.switchUtprasCategory('Mobile Training Programs')">Mobile Training Programs</button>
             <button class="sub-tab-button utpras-category-button" onclick="window.switchUtprasCategory('Recognized TVET Programs')">Recognized TVET Programs</button>
             <button class="sub-tab-button utpras-category-button" onclick="window.switchUtprasCategory('Micro-Credential Courses')">Micro-Credential Courses</button>
+            <button class="sub-tab-button utpras-category-button" onclick="window.switchUtprasCategory('Diploma Programs')">Diploma Programs</button>
         </div>
 
         <p id="activeUtprasCategoryLabel" class="text-center font-semibold text-gray-700 mb-4">Showing: With Training Regulations</p>
 
         <div class="controls">
-            <button class="btn add-btn" onclick="window.addProgram()">
+            <button id="adminAddProgramBtn" class="btn add-btn hidden" data-admin-only onclick="window.addProgram()">
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 4C11.4477 4 11 4.44772 11 5V11H5C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13H11V19C11 19.5523 11.4477 20 12 20C12.5523 20 13 19.5523 13 19V13H19C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11H13V5C13 4.44772 12.5523 4 12 4Z"/>
                 </svg>
@@ -1050,6 +1173,10 @@
         import {
             getAuth,
             signInAnonymously,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut,
+            onAuthStateChanged,
             setPersistence,
             browserLocalPersistence,
             browserSessionPersistence,
@@ -1078,6 +1205,8 @@
         let lastFirebaseError = null;
         let allEmployees = []; // Global array to hold all employee data for filtering
         let editingEmployeeId = null; // To track which employee is being edited
+        const ADMIN_EMAIL = "gregorio.seth14@gmail.com";
+        let isAdminMode = false;
 
         // --- IMPORTANT: Firebase Configuration ---
         // If you are running this code OUTSIDE of the Canvas environment,
@@ -1127,6 +1256,143 @@
         }
         window.setFirebaseStatus = setFirebaseStatus;
 
+        function isAdminUser(user) {
+            return Boolean(
+                user &&
+                !user.isAnonymous &&
+                String(user.email || '').trim().toLowerCase() === ADMIN_EMAIL
+            );
+        }
+
+        function requireAdministrator(actionLabel = 'perform this action') {
+            if (isAdminMode) return true;
+            window.showMessageBox(`Administrator access is required to ${actionLabel}. Public users may submit new employee data and view the dashboards only.`);
+            return false;
+        }
+
+        function applyRoleUI() {
+            const user = auth && auth.currentUser ? auth.currentUser : null;
+            isAdminMode = isAdminUser(user);
+
+            document.querySelectorAll('[data-admin-only]').forEach(element => {
+                element.classList.toggle('hidden', !isAdminMode);
+            });
+
+            const loginButton = document.getElementById('adminLoginBtn');
+            const logoutButton = document.getElementById('adminLogoutBtn');
+            const badge = document.getElementById('roleBadge');
+            const title = document.getElementById('roleTitle');
+            const description = document.getElementById('roleDescription');
+            const notice = document.getElementById('employeeFormModeNotice');
+            const saveButton = document.getElementById('saveEmployeeBtn');
+
+            loginButton?.classList.toggle('hidden', isAdminMode);
+            logoutButton?.classList.toggle('hidden', !isAdminMode);
+
+            if (isAdminMode) {
+                if (badge) {
+                    badge.textContent = 'ADMINISTRATOR';
+                    badge.className = 'role-badge role-badge-admin';
+                }
+                if (title) title.textContent = ADMIN_EMAIL;
+                if (description) description.textContent = 'Full access: view, add, edit, and delete employee, qualification, and UTPRAS records.';
+                if (notice) {
+                    notice.className = 'employee-mode-notice admin';
+                    notice.textContent = 'Administrator mode is active. You may add new records and edit or delete existing database entries.';
+                }
+                if (saveButton && !editingEmployeeId) saveButton.textContent = 'Save Employee Record';
+            } else {
+                if (badge) {
+                    badge.textContent = 'VIEWER / DATA SUBMITTER';
+                    badge.className = 'role-badge role-badge-viewer';
+                }
+                if (title) title.textContent = 'Public user access';
+                if (description) description.textContent = 'You may submit employee data, identify an official designation when applicable, and view dashboards. Editing and deletion are restricted to the administrator.';
+                if (notice) {
+                    notice.className = 'employee-mode-notice';
+                    notice.textContent = 'Submit your employee information below. After submission, only the administrator can edit or delete the saved record.';
+                }
+                if (saveButton) saveButton.textContent = 'Submit Employee Data';
+                const addQualificationSection = document.getElementById('newQualificationSection');
+                addQualificationSection?.classList.add('hidden');
+            }
+
+            if (typeof toggleOfficialDesignationVisibility === 'function') toggleOfficialDesignationVisibility();
+            if (typeof renderEmployeeTable === 'function') renderEmployeeTable(allEmployees);
+            if (typeof renderUtprasTable === 'function') renderUtprasTable(allUtprasPrograms);
+        }
+
+        function waitForInitialAuthState(authInstance) {
+            return new Promise((resolve, reject) => {
+                let unsubscribe = () => {};
+                unsubscribe = onAuthStateChanged(
+                    authInstance,
+                    user => {
+                        unsubscribe();
+                        resolve(user);
+                    },
+                    error => {
+                        unsubscribe();
+                        reject(error);
+                    }
+                );
+            });
+        }
+
+        window.adminLoginWithGoogle = async function() {
+            try {
+                await ensureFirebaseConnected();
+                const provider = new GoogleAuthProvider();
+                provider.setCustomParameters({
+                    prompt: 'select_account',
+                    login_hint: ADMIN_EMAIL
+                });
+
+                const result = await signInWithPopup(auth, provider);
+                if (!isAdminUser(result.user)) {
+                    const attemptedEmail = result.user && result.user.email ? result.user.email : 'another account';
+                    await signOut(auth);
+                    const anonymousUser = (await signInAnonymously(auth)).user;
+                    userId = anonymousUser.uid;
+                    isAuthReady = true;
+                    applyRoleUI();
+                    throw new Error(`Access denied. ${attemptedEmail} is not the authorized administrator account.`);
+                }
+
+                userId = result.user.uid;
+                isAuthReady = true;
+                applyRoleUI();
+                startRealtimeListeners();
+                setFirebaseStatus('connected', `Connected to ${firebaseConfig.projectId} — Administrator mode.`);
+                window.showMessageBox(`Administrator login successful.\n\nAccount: ${ADMIN_EMAIL}`);
+            } catch (error) {
+                if (error && error.code === 'auth/popup-closed-by-user') return;
+                const friendly = friendlyFirebaseError(error);
+                window.showMessageBox('Administrator login failed: ' + friendly);
+                console.error('Administrator login error:', error);
+            }
+        };
+
+        window.adminLogout = async function() {
+            try {
+                if (!auth) return;
+                await signOut(auth);
+                const anonymousUser = (await signInAnonymously(auth)).user;
+                userId = anonymousUser.uid;
+                isAuthReady = true;
+                isAdminMode = false;
+                editingEmployeeId = null;
+                if (typeof clearEmployeeForm === 'function') clearEmployeeForm();
+                applyRoleUI();
+                startRealtimeListeners();
+                setFirebaseStatus('connected', `Connected to ${firebaseConfig.projectId} — Viewer / data submitter mode.`);
+                window.showMessageBox('Administrator signed out. The system is now in viewer/data-submitter mode.');
+            } catch (error) {
+                window.showMessageBox('Logout failed: ' + friendlyFirebaseError(error));
+                console.error('Administrator logout error:', error);
+            }
+        };
+
 
         function friendlyFirebaseError(error) {
             const code = error && error.code ? error.code : '';
@@ -1140,7 +1406,7 @@
                 return 'Firebase Authentication is not supported from this page address. Use an http:// or https:// URL instead of opening the HTML by double-clicking it.';
             }
             if (code === 'auth/operation-not-allowed' || code === 'auth/admin-restricted-operation') {
-                return 'Anonymous Authentication is disabled. In Firebase Console, open Authentication > Sign-in method and enable Anonymous.';
+                return 'A required sign-in provider is disabled. Enable both Anonymous and Google under Firebase Authentication > Sign-in method.';
             }
             if (code === 'auth/unauthorized-domain') {
                 return `This website domain (${window.location.hostname || 'local file'}) is not authorized. Add it under Firebase Authentication > Settings > Authorized domains.`;
@@ -1149,13 +1415,19 @@
                 return 'The Firebase API key is invalid. Copy the complete Web App configuration again from Firebase Project Settings.';
             }
             if (code === 'auth/configuration-not-found') {
-                return 'Firebase Authentication is not configured for this project. Open Firebase Console > Authentication and click Get started, then enable Anonymous sign-in.';
+                return 'Firebase Authentication is not configured. Open Firebase Console > Authentication, then enable Anonymous and Google sign-in.';
             }
             if (code === 'permission-denied' || lowerMessage.includes('permission')) {
                 return 'Firestore denied access. Publish the matching firestore rules and make sure the user is authenticated.';
             }
             if (code === 'auth/network-request-failed') {
                 return 'Firebase could not be reached. Check the internet connection, firewall, antivirus web protection, or browser extensions.';
+            }
+            if (code === 'auth/popup-blocked') {
+                return 'The browser blocked the Google sign-in window. Allow pop-ups for this GitHub Pages website and try again.';
+            }
+            if (code === 'auth/cancelled-popup-request') {
+                return 'Another Google sign-in attempt is already open. Close it and try again.';
             }
             return message;
         }
@@ -1235,12 +1507,12 @@
                     getDocs(query(collection(db, COLLECTIONS.qualifications), limit(1)))
                 ]);
                 const layoutLabel = firestoreLayout === 'legacy' ? 'existing nested collections' : 'top-level collections';
-                setFirebaseStatus('connected', `Connected to ${firebaseConfig.projectId} — using ${layoutLabel}.`);
+                setFirebaseStatus('connected', `Connected to ${firebaseConfig.projectId} — ${isAdminMode ? 'Administrator' : 'Viewer / data submitter'} mode; using ${layoutLabel}.`);
                 window.showMessageBox(
                     `Firebase connection successful!
 
 Project: ${firebaseConfig.projectId}
-User: ${auth.currentUser.uid}
+User mode: ${isAdminMode ? 'Administrator (' + ADMIN_EMAIL + ')' : 'Viewer / data submitter'}
 Collection layout: ${layoutLabel}`
                 );
             } catch (error) {
@@ -1414,7 +1686,8 @@ Collection layout: ${layoutLabel}`
             "With Training Regulations",
             "Mobile Training Programs",
             "Recognized TVET Programs",
-            "Micro-Credential Courses"
+            "Micro-Credential Courses",
+            "Diploma Programs"
         ];
         let allUtprasPrograms = [];
         let activeUtprasCategory = "With Training Regulations";
@@ -1486,6 +1759,7 @@ Collection layout: ${layoutLabel}`
             setText('dashboardMobileCount', categoryCounts['Mobile Training Programs'] || 0);
             setText('dashboardRecognizedCount', categoryCounts['Recognized TVET Programs'] || 0);
             setText('dashboardMicroCount', categoryCounts['Micro-Credential Courses'] || 0);
+            setText('dashboardDiplomaCount', categoryCounts['Diploma Programs'] || 0);
 
             const tableBody = document.getElementById('dashboardExpiryTable')?.getElementsByTagName('tbody')[0];
             if (!tableBody) return;
@@ -1562,8 +1836,10 @@ Collection layout: ${layoutLabel}`
                     <td>${formatDate(program.dateRegistered || '')}</td>
                     <td>${formatDate(program.validity || '')}</td>
                     <td>
-                        <button class="btn edit-btn" onclick="window.editUtprasRow(this)">Edit</button>
-                        <button class="btn delete-btn" onclick="window.deleteUtprasRow(this)">Delete</button>
+                        ${isAdminMode ? `
+                            <button class="btn edit-btn" onclick="window.editUtprasRow(this)">Edit</button>
+                            <button class="btn delete-btn" onclick="window.deleteUtprasRow(this)">Delete</button>
+                        ` : '<span class="view-only-chip">View only</span>'}
                     </td>
                 `;
             });
@@ -1573,6 +1849,7 @@ Collection layout: ${layoutLabel}`
          * Adds a new program to Firestore and updates the UTPRAS table.
          */
         window.addProgram = async function() {
+            if (!requireAdministrator('add UTPRAS programs')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
@@ -1602,6 +1879,7 @@ Collection layout: ${layoutLabel}`
          * Enables content editing for cells in the selected UTPRAS row.
          */
         window.editUtprasRow = function(button) {
+            if (!requireAdministrator('edit UTPRAS programs')) return;
             // For UTPRAS table, we'll keep the direct contenteditable for simplicity
             const row = button.closest("tr");
             row.cells[1].contentEditable = "true";
@@ -1627,6 +1905,7 @@ Collection layout: ${layoutLabel}`
          * Saves the changes made to an edited UTPRAS row to Firestore.
          */
         window.saveUtprasRow = async function(button) {
+            if (!requireAdministrator('save changes to UTPRAS programs')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
@@ -1686,6 +1965,7 @@ Collection layout: ${layoutLabel}`
          * Deletes the selected UTPRAS row from Firestore.
          */
         window.deleteUtprasRow = async function(button) {
+            if (!requireAdministrator('delete UTPRAS programs')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
@@ -1770,9 +2050,12 @@ Collection layout: ${layoutLabel}`
                     <td>${formatDate(employee.nttcExpiryDate || '')}</td>
                     <td>${employee.withCertificate ? 'Yes' : 'No'}</td>
                     <td>${employee.markAsOfficial ? 'Yes' : 'No'}</td>
+                    <td>${employee.markAsOfficial ? (employee.officialDesignation || 'Not specified') : ''}</td>
                     <td>
-                        <button class="btn edit-btn" onclick="window.editEmployeeRecord(this)">Edit</button>
-                        <button class="btn delete-btn" onclick="window.deleteEmployeeRecord(this)">Delete</button>
+                        ${isAdminMode ? `
+                            <button class="btn edit-btn" onclick="window.editEmployeeRecord(this)">Edit</button>
+                            <button class="btn delete-btn" onclick="window.deleteEmployeeRecord(this)">Delete</button>
+                        ` : '<span class="view-only-chip">View only</span>'}
                     </td>
                 `;
             });
@@ -1806,15 +2089,17 @@ Collection layout: ${layoutLabel}`
             document.getElementById('nttcExpiryDate').value = '';
             document.getElementById('withCertificate').checked = false;
             document.getElementById('markAsOfficial').checked = false;
+            document.getElementById('officialDesignation').value = '';
             document.getElementById('nttcNaCheckbox').checked = false; // Clear N/A checkbox
 
             editingEmployeeId = null;
-            document.getElementById('saveEmployeeBtn').textContent = 'Save Employee Record';
+            document.getElementById('saveEmployeeBtn').textContent = isAdminMode ? 'Save Employee Record' : 'Submit Employee Data';
             document.getElementById('cancelEditBtn').style.display = 'none';
 
             // Reset visibility and disabled states
             toggleCertificationFieldsVisibility(''); // Hide cert details
             handleNttcNaCheckboxChange(); // Reset NTTC fields based on unchecked N/A checkbox
+            toggleOfficialDesignationVisibility();
         }
 
         /**
@@ -1822,6 +2107,7 @@ Collection layout: ${layoutLabel}`
          * @param {HTMLButtonElement} button The edit button clicked.
          */
         window.editEmployeeRecord = function(button) {
+            if (!requireAdministrator('edit employee records')) return;
             const row = button.closest("tr");
             const docId = row.getAttribute('data-id');
             const employeeToEdit = allEmployees.find(emp => emp.id === docId);
@@ -1866,6 +2152,8 @@ Collection layout: ${layoutLabel}`
 
                 document.getElementById('withCertificate').checked = employeeToEdit.withCertificate || false;
                 document.getElementById('markAsOfficial').checked = employeeToEdit.markAsOfficial || false;
+                document.getElementById('officialDesignation').value = employeeToEdit.officialDesignation || '';
+                toggleOfficialDesignationVisibility();
 
                 editingEmployeeId = docId;
                 document.getElementById('saveEmployeeBtn').textContent = 'Update Employee Record';
@@ -1881,6 +2169,7 @@ Collection layout: ${layoutLabel}`
          * Saves a new or updates an existing employee record to Firestore.
          */
         window.saveEmployeeRecord = async function() {
+            if (editingEmployeeId && !requireAdministrator('update employee records')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
@@ -1916,9 +2205,18 @@ Collection layout: ${layoutLabel}`
 
             const withCertificate = document.getElementById('withCertificate').checked;
             const markAsOfficial = document.getElementById('markAsOfficial').checked;
+            const officialDesignation = markAsOfficial
+                ? document.getElementById('officialDesignation').value.trim()
+                : '';
 
             if (!employeeId || !employeeName || !position || !dateHired) {
                 window.showMessageBox("Employee ID, Name, Position, and Date Hired are required fields.");
+                return;
+            }
+
+            if (markAsOfficial && !officialDesignation) {
+                window.showMessageBox("Please select the employee's official designation.");
+                document.getElementById('officialDesignation').focus();
                 return;
             }
 
@@ -1947,6 +2245,7 @@ Collection layout: ${layoutLabel}`
                 nttcExpiryDate,
                 withCertificate,
                 markAsOfficial,
+                officialDesignation,
                 userId: userId,
                 // createdAt will only be set on new records
             };
@@ -1973,6 +2272,7 @@ Collection layout: ${layoutLabel}`
          * Deletes the selected Employee record from Firestore.
          */
         window.deleteEmployeeRecord = async function(button) {
+            if (!requireAdministrator('delete employee records')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
@@ -2086,6 +2386,7 @@ Collection layout: ${layoutLabel}`
          * Updated to use new IDs and toggle 'hidden' class.
          */
         window.toggleAddQualificationInput = function() {
+            if (!requireAdministrator('add qualifications')) return;
             const container = document.getElementById('newQualificationSection');
             container.classList.toggle('hidden');
             if (!container.classList.contains('hidden')) {
@@ -2100,6 +2401,7 @@ Collection layout: ${layoutLabel}`
          * Updated to use new IDs.
          */
         window.saveNewQualification = async function() {
+            if (!requireAdministrator('save qualifications')) return;
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 console.error("Authentication not ready when trying to save new qualification.");
@@ -2185,6 +2487,24 @@ Collection layout: ${layoutLabel}`
         }
 
 
+        /**
+         * Shows the official designation dropdown only when the employee is marked as an official.
+         */
+        function toggleOfficialDesignationVisibility() {
+            const checkbox = document.getElementById('markAsOfficial');
+            const section = document.getElementById('officialDesignationSection');
+            const select = document.getElementById('officialDesignation');
+            if (!checkbox || !section || !select) return;
+
+            const shouldShow = checkbox.checked;
+            section.classList.toggle('hidden', !shouldShow);
+            select.required = shouldShow;
+
+            if (!shouldShow) {
+                select.value = '';
+            }
+        }
+
         // --- New Rendering Functions for Sub-Tabs ---
 
         /**
@@ -2251,6 +2571,7 @@ Collection layout: ${layoutLabel}`
                     <td>${official.employeeId || ''}</td>
                     <td>${official.employeeName || ''}</td>
                     <td>${official.position || ''}</td>
+                    <td>${official.officialDesignation || 'Not specified'}</td>
                     <td>${official.department || ''}</td>
                     <td>${official.contactNumber || ''}</td>
                     <td>${official.emailAddress || ''}</td>
@@ -2394,6 +2715,7 @@ Collection layout: ${layoutLabel}`
             const saveNew = document.getElementById('saveNewQualificationBtn');
             const cancelNew = document.getElementById('cancelNewQualificationBtn');
             const nttcNa = document.getElementById('nttcNaCheckbox');
+            const markAsOfficial = document.getElementById('markAsOfficial');
 
             qualification?.addEventListener('change', (event) => {
                 toggleCertificationFieldsVisibility(event.target.value);
@@ -2403,9 +2725,11 @@ Collection layout: ${layoutLabel}`
             saveNew?.addEventListener('click', window.saveNewQualification);
             cancelNew?.addEventListener('click', window.toggleAddQualificationInput);
             nttcNa?.addEventListener('change', handleNttcNaCheckboxChange);
+            markAsOfficial?.addEventListener('change', toggleOfficialDesignationVisibility);
 
             toggleCertificationFieldsVisibility('');
             handleNttcNaCheckboxChange();
+            toggleOfficialDesignationVisibility();
         }
 
         async function initializeFirebaseConnection() {
@@ -2439,18 +2763,21 @@ Collection layout: ${layoutLabel}`
                     }
                 }
 
-                const activeUser = auth.currentUser || (await signInAnonymously(auth)).user;
+                let activeUser = await waitForInitialAuthState(auth);
+                if (!activeUser) activeUser = (await signInAnonymously(auth)).user;
                 if (!activeUser) throw new Error('Firebase did not return an authenticated user.');
 
                 userId = activeUser.uid;
                 isAuthReady = true;
+                isAdminMode = isAdminUser(activeUser);
+                applyRoleUI();
 
                 await detectFirestoreLayout();
                 await loadQualifications();
                 startRealtimeListeners();
 
                 const layoutLabel = firestoreLayout === 'legacy' ? 'existing nested collections' : 'top-level collections';
-                setFirebaseStatus('connected', `Connected to ${firebaseConfig.projectId} — using ${layoutLabel}.`);
+                setFirebaseStatus('connected', `Connected to ${firebaseConfig.projectId} — ${isAdminMode ? 'Administrator' : 'Viewer / data submitter'} mode; using ${layoutLabel}.`);
                 console.log('Firebase connected:', {
                     projectId: firebaseConfig.projectId,
                     userId,
@@ -2470,6 +2797,7 @@ Collection layout: ${layoutLabel}`
 
         document.addEventListener('DOMContentLoaded', () => {
             attachFormEventListeners();
+            applyRoleUI();
             firebaseInitializationPromise = initializeFirebaseConnection().catch((error) => {
                 const friendly = friendlyFirebaseError(error);
                 // Show one useful startup message. The Test Firebase button can retry afterward.
