@@ -336,6 +336,28 @@
             font-size: 0.85rem;
         }
 
+        .autofill-status {
+            margin: 7px 0 0;
+            font-size: 0.82rem;
+            line-height: 1.35;
+            color: #64748b;
+        }
+
+        .autofill-status.searching {
+            color: #1d4ed8;
+            font-weight: 700;
+        }
+
+        .autofill-status.success {
+            color: #047857;
+            font-weight: 700;
+        }
+
+        .autofill-status.not-found {
+            color: #b45309;
+            font-weight: 700;
+        }
+
         .form-actions {
             grid-column: 1 / -1; /* Span across all columns */
             text-align: center;
@@ -741,7 +763,7 @@
         <div class="access-mode-text">
             <span id="roleBadge" class="role-badge role-badge-viewer">VIEWER / DATA SUBMITTER</span>
             <strong id="roleTitle">Public user access</strong>
-            <span id="roleDescription">You may submit employee data, identify an official designation when applicable, and view dashboards. Editing and deletion are restricted to the administrator.</span>
+            <span id="roleDescription">You may submit employee data, identify an official designation when applicable, and view dashboards. Editing, deletion, and qualification management are restricted to the administrator.</span>
         </div>
         <button type="button" id="adminLoginBtn" class="auth-action-btn auth-login-btn" onclick="window.adminLoginWithGoogle()">
             Admin Login with Google
@@ -869,12 +891,17 @@
         <div id="employee-records-content" class="sub-tab-content">
             <h3 class="text-lg font-medium text-blue-700 mb-4">Add New Employee Record</h3>
             <div id="employeeFormModeNotice" class="employee-mode-notice">
-                Submit your employee information below. You may mark the record as official and select the applicable designation. After submission, only the administrator can edit or delete the saved record.
+                Submit your employee information below. Records submitted from this browser may be corrected through the Employee Records List. Only the administrator can delete records.
             </div>
             <div class="employee-form-grid">
                 <div>
                     <label for="employeeId">Employee ID</label>
-                    <input type="text" id="employeeId" placeholder="e.g., EMP-001">
+                    <input type="text" id="employeeId" list="employeeIdSuggestions"
+                           autocomplete="off" placeholder="e.g., EMP-001">
+                    <datalist id="employeeIdSuggestions"></datalist>
+                    <p id="employeeAutofillStatus" class="autofill-status">
+                        Enter or select an existing Employee ID to automatically fill the employee profile. The qualification and TMC/NC/NTTC fields will be left blank for the new entry.
+                    </p>
                 </div>
                 <div>
                     <label for="employeeName">Employee Name</labeL>
@@ -886,15 +913,33 @@
                 </div>
                 <div>
                     <label for="department">Department</label>
-                    <input type="text" id="department" placeholder="e.g., Automotive Servicing">
+                    <select id="department" required>
+                        <option value="">-- Select Department --</option>
+                        <option value="Instructional Department">Instructional Department</option>
+                        <option value="Administrative Department">Administrative Department</option>
+                    </select>
                 </div>
                 <div>
                     <label for="appointmentNature">Nature of Appointment</label>
                     <input type="text" id="appointmentNature" placeholder="e.g., Permanent, Contractual">
                 </div>
                 <div>
-                    <label for="educationAttainment">Education Attainment</label>
-                    <input type="text" id="educationAttainment" placeholder="e.g., BSIT, MAEd">
+                    <label for="educationAttainment">Educational Attainment</label>
+                    <select id="educationAttainment" required>
+                        <option value="">-- Select Educational Attainment --</option>
+                        <option value="Elementary Graduate">Elementary Graduate</option>
+                        <option value="Junior High School Graduate">Junior High School Graduate</option>
+                        <option value="Senior High School Graduate">Senior High School Graduate</option>
+                        <option value="Technical-Vocational Graduate">Technical-Vocational Graduate</option>
+                        <option value="College Undergraduate">College Undergraduate</option>
+                        <option value="Bachelor's Degree">Bachelor's Degree</option>
+                        <option value="Post-Baccalaureate / Professional Education Units">Post-Baccalaureate / Professional Education Units</option>
+                        <option value="Master's Degree Units">Master's Degree Units</option>
+                        <option value="Master's Degree Graduate">Master's Degree Graduate</option>
+                        <option value="Doctorate Degree Units">Doctorate Degree Units</option>
+                        <option value="Doctorate Degree Graduate">Doctorate Degree Graduate</option>
+                        <option value="Others">Others</option>
+                    </select>
                 </div>
                 <div>
                     <label for="yearsTeaching">Years Teaching</label>
@@ -1033,7 +1078,8 @@
                 </div>
             </div>
 
-            <h3 class="text-lg font-medium text-blue-700 mt-8 mb-4">Employee Records List</h3>
+            <h3 class="text-lg font-medium text-blue-700 mt-8 mb-2">Employee Records List</h3>
+            <p class="text-sm text-gray-600 mb-4">You can edit only records submitted from this same browser/device. Only the administrator can delete records.</p>
             <div class="employee-table-container">
                 <table id="employeeTable">
                     <thead>
@@ -1306,6 +1352,10 @@
         let lastFirebaseError = null;
         let allEmployees = []; // Global array to hold all employee data for filtering
         let editingEmployeeId = null; // To track which employee is being edited
+        let editingEmployeeOwnerId = null; // Preserve the original submitter/owner during edits
+        let employeeSaveInProgress = false; // Prevent duplicate saves from repeated clicks
+        let employeeAutofillTimer = null;
+        let lastAutofilledEmployeeId = '';
         const ADMIN_EMAIL = "gregorio.seth14@gmail.com";
         let isAdminMode = false;
 
@@ -1367,7 +1417,7 @@
 
         function requireAdministrator(actionLabel = 'perform this action') {
             if (isAdminMode) return true;
-            window.showMessageBox(`Administrator access is required to ${actionLabel}. Public users may submit new employee data and view the dashboards only.`);
+            window.showMessageBox(`Administrator access is required to ${actionLabel}. Public users may submit new employee data, add missing qualifications, and view the dashboards only.`);
             return false;
         }
 
@@ -1401,19 +1451,19 @@
                     notice.className = 'employee-mode-notice admin';
                     notice.textContent = 'Administrator mode is active. You may add new records and edit or delete existing database entries.';
                 }
-                if (saveButton && !editingEmployeeId) saveButton.textContent = 'Save Employee Record';
+                if (saveButton && !editingEmployeeId && !employeeSaveInProgress) saveButton.textContent = 'Save Employee Record';
             } else {
                 if (badge) {
                     badge.textContent = 'VIEWER / DATA SUBMITTER';
                     badge.className = 'role-badge role-badge-viewer';
                 }
                 if (title) title.textContent = 'Public user access';
-                if (description) description.textContent = 'You may submit employee data, identify an official designation when applicable, and view dashboards. Editing and deletion are restricted to the administrator.';
+                if (description) description.textContent = 'You may submit employee data, edit only the records submitted from this browser, and view dashboards. Deletion and qualification management are restricted to the administrator.';
                 if (notice) {
                     notice.className = 'employee-mode-notice';
-                    notice.textContent = 'Submit your employee information below. After submission, only the administrator can edit or delete the saved record.';
+                    notice.textContent = 'For a returning employee, enter the same Employee ID to auto-fill the profile, then select another qualification and enter the new TMC/NC/NTTC details. You may edit records submitted from this browser. Only the administrator can delete saved records.';
                 }
-                if (saveButton) saveButton.textContent = 'Submit Employee Data';
+                if (saveButton && !employeeSaveInProgress) saveButton.textContent = editingEmployeeId ? 'Update Employee Record' : 'Submit Employee Data';
                 const addQualificationSection = document.getElementById('newQualificationSection');
                 addQualificationSection?.classList.add('hidden');
             }
@@ -2258,6 +2308,207 @@ Collection layout: ${layoutLabel}`
 
         // --- Employee Monitoring Logic ---
 
+        function normalizeEmployeeId(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function setEmployeeAutofillStatus(message, state = '') {
+            const status = document.getElementById('employeeAutofillStatus');
+            if (!status) return;
+            status.className = `autofill-status${state ? ' ' + state : ''}`;
+            status.textContent = message;
+        }
+
+        function setSelectValuePreservingExisting(selectId, value) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            const cleanValue = String(value || '').trim();
+            select.querySelectorAll('option[data-existing-value="true"]').forEach(option => option.remove());
+
+            if (!cleanValue) {
+                select.value = '';
+                return;
+            }
+
+            const existingOption = Array.from(select.options).find(option => option.value === cleanValue);
+            if (!existingOption) {
+                const option = document.createElement('option');
+                option.value = cleanValue;
+                option.textContent = `${cleanValue} (existing record)`;
+                option.dataset.existingValue = 'true';
+                select.appendChild(option);
+            }
+            select.value = cleanValue;
+        }
+
+        function populateEmployeeIdSuggestions() {
+            const datalist = document.getElementById('employeeIdSuggestions');
+            if (!datalist) return;
+
+            const uniqueEmployees = new Map();
+            allEmployees.forEach(employee => {
+                const employeeId = String(employee.employeeId || '').trim();
+                if (!employeeId) return;
+                const key = normalizeEmployeeId(employeeId);
+                const previous = uniqueEmployees.get(key);
+                const previousTime = previous ? new Date(previous.createdAt || 0).getTime() : -1;
+                const currentTime = new Date(employee.createdAt || 0).getTime();
+                if (!previous || currentTime >= previousTime) uniqueEmployees.set(key, employee);
+            });
+
+            datalist.innerHTML = '';
+            Array.from(uniqueEmployees.values())
+                .sort((a, b) => String(a.employeeId || '').localeCompare(String(b.employeeId || '')))
+                .forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.employeeId || '';
+                    option.label = employee.employeeName || '';
+                    datalist.appendChild(option);
+                });
+        }
+
+        function findLatestEmployeeProfile(employeeId) {
+            const normalizedId = normalizeEmployeeId(employeeId);
+            if (!normalizedId) return null;
+
+            return allEmployees
+                .filter(employee => normalizeEmployeeId(employee.employeeId) === normalizedId)
+                .sort((a, b) => {
+                    const dateA = new Date(a.createdAt || 0).getTime();
+                    const dateB = new Date(b.createdAt || 0).getTime();
+                    return dateB - dateA;
+                })[0] || null;
+        }
+
+        function clearCredentialFieldsForNewQualification() {
+            ['tmcNumber', 'tmcIssuedDate', 'tmcExpiryDate',
+             'ncNumber', 'ncIssuedDate', 'ncExpiryDate',
+             'nttcNumber', 'nttcIssuedDate', 'nttcExpiryDate']
+                .forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.value = '';
+                });
+
+            const nttcNaCheckbox = document.getElementById('nttcNaCheckbox');
+            if (nttcNaCheckbox) nttcNaCheckbox.checked = false;
+            handleNttcNaCheckboxChange();
+        }
+
+        function fillEmployeeProfileFromExisting(employee) {
+            if (!employee || editingEmployeeId) return false;
+
+            const setValue = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.value = value ?? '';
+            };
+
+            setValue('employeeName', employee.employeeName);
+            setValue('position', employee.position);
+            setSelectValuePreservingExisting('department', employee.department);
+            setValue('appointmentNature', employee.appointmentNature);
+            setSelectValuePreservingExisting('educationAttainment', employee.educationAttainment);
+            setValue('yearsTeaching', employee.yearsTeaching ?? '');
+            setValue('yearsIndustryExp', employee.yearsIndustryExp ?? '');
+            setValue('dateHired', employee.dateHired);
+            setValue('address', employee.address);
+            setValue('contactNumber', employee.contactNumber);
+            setValue('emailAddress', employee.emailAddress);
+
+            const withCertificate = document.getElementById('withCertificate');
+            if (withCertificate) withCertificate.checked = Boolean(employee.withCertificate);
+
+            const markAsOfficial = document.getElementById('markAsOfficial');
+            if (markAsOfficial) markAsOfficial.checked = Boolean(employee.markAsOfficial);
+            setSelectValuePreservingExisting('officialDesignation', employee.officialDesignation);
+            toggleOfficialDesignationVisibility();
+
+            // A returning employee is adding another qualification record.
+            // Do not copy the previous qualification or credential data. The employee
+            // must select the new qualification and enter its own TMC/NC/NTTC details.
+            const qualificationSelect = document.getElementById('qualification');
+            if (qualificationSelect) qualificationSelect.value = '';
+            toggleCertificationFieldsVisibility('');
+            updateQualificationTabsVisibility();
+            clearCredentialFieldsForNewQualification();
+
+            lastAutofilledEmployeeId = normalizeEmployeeId(employee.employeeId);
+            setEmployeeAutofillStatus(
+                `Profile found for ${employee.employeeName || employee.employeeId}. Personal and employment details were filled automatically. Select the new qualification and enter its TMC/NC/NTTC information.`,
+                'success'
+            );
+            return true;
+        }
+
+        function tryAutofillEmployeeProfile(options = {}) {
+            if (editingEmployeeId) return false;
+            const employeeIdInput = document.getElementById('employeeId');
+            if (!employeeIdInput) return false;
+
+            const enteredId = employeeIdInput.value.trim();
+            if (!enteredId) {
+                lastAutofilledEmployeeId = '';
+                setEmployeeAutofillStatus(
+                    'Enter or select an existing Employee ID to automatically fill the employee profile. The qualification and TMC/NC/NTTC fields will be left blank for the new entry.'
+                );
+                return false;
+            }
+
+            const match = findLatestEmployeeProfile(enteredId);
+            if (!match) {
+                lastAutofilledEmployeeId = '';
+                if (!options.silent) {
+                    setEmployeeAutofillStatus(
+                        'No existing record was found for this Employee ID. Please complete the employee profile manually.',
+                        'not-found'
+                    );
+                }
+                return false;
+            }
+
+            if (!options.force && lastAutofilledEmployeeId === normalizeEmployeeId(enteredId)) {
+                return true;
+            }
+
+            return fillEmployeeProfileFromExisting(match);
+        }
+
+        /**
+         * Returns true when the current anonymous user originally submitted the record.
+         * Ownership persists on the same browser/device unless its site data is cleared.
+         */
+        function isCurrentUserEmployeeOwner(employee) {
+            return Boolean(
+                !isAdminMode &&
+                userId &&
+                employee &&
+                employee.userId &&
+                String(employee.userId) === String(userId)
+            );
+        }
+
+        function canCurrentUserEditEmployee(employee) {
+            return isAdminMode || isCurrentUserEmployeeOwner(employee);
+        }
+
+        function setEmployeeSaveBusy(isBusy) {
+            employeeSaveInProgress = Boolean(isBusy);
+            const saveButton = document.getElementById('saveEmployeeBtn');
+            if (!saveButton) return;
+
+            saveButton.disabled = employeeSaveInProgress;
+            saveButton.style.opacity = employeeSaveInProgress ? '0.65' : '';
+            saveButton.style.cursor = employeeSaveInProgress ? 'not-allowed' : '';
+
+            if (employeeSaveInProgress) {
+                saveButton.textContent = editingEmployeeId ? 'Updating…' : 'Submitting…';
+            } else if (editingEmployeeId) {
+                saveButton.textContent = 'Update Employee Record';
+            } else {
+                saveButton.textContent = isAdminMode ? 'Save Employee Record' : 'Submit Employee Data';
+            }
+        }
+
         /**
          * Populates the Employee table with data fetched from Firestore.
          * @param {Array<Object>} data An array of employee objects from Firestore.
@@ -2308,6 +2559,8 @@ Collection layout: ${layoutLabel}`
                         ${isAdminMode ? `
                             <button class="btn edit-btn" onclick="window.editEmployeeRecord(this)">Edit</button>
                             <button class="btn delete-btn" onclick="window.deleteEmployeeRecord(this)">Delete</button>
+                        ` : isCurrentUserEmployeeOwner(employee) ? `
+                            <button class="btn edit-btn" onclick="window.editEmployeeRecord(this)">Edit My Entry</button>
                         ` : '<span class="view-only-chip">View only</span>'}
                     </td>
                 `;
@@ -2346,7 +2599,12 @@ Collection layout: ${layoutLabel}`
             document.getElementById('nttcNaCheckbox').checked = false; // Clear N/A checkbox
 
             editingEmployeeId = null;
-            document.getElementById('saveEmployeeBtn').textContent = isAdminMode ? 'Save Employee Record' : 'Submit Employee Data';
+            editingEmployeeOwnerId = null;
+            lastAutofilledEmployeeId = '';
+            setEmployeeAutofillStatus(
+                'Enter or select an existing Employee ID to automatically fill the employee profile. The qualification and TMC/NC/NTTC fields will be left blank for the new entry.'
+            );
+            setEmployeeSaveBusy(false);
             document.getElementById('cancelEditBtn').style.display = 'none';
 
             // Reset visibility and disabled states
@@ -2360,18 +2618,27 @@ Collection layout: ${layoutLabel}`
          * @param {HTMLButtonElement} button The edit button clicked.
          */
         window.editEmployeeRecord = function(button) {
-            if (!requireAdministrator('edit employee records')) return;
             const row = button.closest("tr");
-            const docId = row.getAttribute('data-id');
+            const docId = row ? row.getAttribute('data-id') : '';
             const employeeToEdit = allEmployees.find(emp => emp.id === docId);
+
+            if (!employeeToEdit) {
+                window.showMessageBox('The selected employee record could not be found. Please refresh the page.');
+                return;
+            }
+
+            if (!canCurrentUserEditEmployee(employeeToEdit)) {
+                window.showMessageBox('You may edit only the employee records submitted from this browser. Only the administrator can edit other records.');
+                return;
+            }
 
             if (employeeToEdit) {
                 document.getElementById('employeeId').value = employeeToEdit.employeeId || '';
                 document.getElementById('employeeName').value = employeeToEdit.employeeName || '';
                 document.getElementById('position').value = employeeToEdit.position || '';
-                document.getElementById('department').value = employeeToEdit.department || '';
+                setSelectValuePreservingExisting('department', employeeToEdit.department || '');
                 document.getElementById('appointmentNature').value = employeeToEdit.appointmentNature || '';
-                document.getElementById('educationAttainment').value = employeeToEdit.educationAttainment || '';
+                setSelectValuePreservingExisting('educationAttainment', employeeToEdit.educationAttainment || '');
                 document.getElementById('yearsTeaching').value = employeeToEdit.yearsTeaching || '';
                 document.getElementById('yearsIndustryExp').value = employeeToEdit.yearsIndustryExp || '';
                 document.getElementById('dateHired').value = employeeToEdit.dateHired || '';
@@ -2405,11 +2672,12 @@ Collection layout: ${layoutLabel}`
 
                 document.getElementById('withCertificate').checked = employeeToEdit.withCertificate || false;
                 document.getElementById('markAsOfficial').checked = employeeToEdit.markAsOfficial || false;
-                document.getElementById('officialDesignation').value = employeeToEdit.officialDesignation || '';
+                setSelectValuePreservingExisting('officialDesignation', employeeToEdit.officialDesignation || '');
                 toggleOfficialDesignationVisibility();
 
                 editingEmployeeId = docId;
-                document.getElementById('saveEmployeeBtn').textContent = 'Update Employee Record';
+                editingEmployeeOwnerId = employeeToEdit.userId || userId || null;
+                setEmployeeSaveBusy(false);
                 document.getElementById('cancelEditBtn').style.display = 'inline-block';
 
                 // Ensure certification details are visible and NTTC fields are correctly set
@@ -2422,10 +2690,20 @@ Collection layout: ${layoutLabel}`
          * Saves a new or updates an existing employee record to Firestore.
          */
         window.saveEmployeeRecord = async function() {
-            if (editingEmployeeId && !requireAdministrator('update employee records')) return;
+            if (employeeSaveInProgress) return;
+
             if (!isAuthReady) {
                 window.showMessageBox("Authentication not ready. Please wait.");
                 return;
+            }
+
+            if (editingEmployeeId) {
+                const existingRecord = allEmployees.find(employee => employee.id === editingEmployeeId);
+                if (!existingRecord || !canCurrentUserEditEmployee(existingRecord)) {
+                    window.showMessageBox('You may update only records submitted from this browser.');
+                    return;
+                }
+                editingEmployeeOwnerId = existingRecord.userId || editingEmployeeOwnerId || userId;
             }
 
             const employeeId = document.getElementById('employeeId').value.trim();
@@ -2462,8 +2740,8 @@ Collection layout: ${layoutLabel}`
                 ? document.getElementById('officialDesignation').value.trim()
                 : '';
 
-            if (!employeeId || !employeeName || !position || !dateHired) {
-                window.showMessageBox("Employee ID, Name, Position, and Date Hired are required fields.");
+            if (!employeeId || !employeeName || !position || !department || !educationAttainment || !dateHired || !qualification) {
+                window.showMessageBox("Employee ID, Name, Position, Department, Educational Attainment, Date Hired, and Qualification are required fields.");
                 return;
             }
 
@@ -2499,25 +2777,30 @@ Collection layout: ${layoutLabel}`
                 withCertificate,
                 markAsOfficial,
                 officialDesignation,
-                userId: userId,
+                userId: editingEmployeeId ? (editingEmployeeOwnerId || userId) : userId,
                 // createdAt will only be set on new records
             };
 
+            setEmployeeSaveBusy(true);
+
             try {
                 if (editingEmployeeId) {
-                    // Update existing record
+                    // Update an existing record. Public users can update only their own submission.
                     await updateDoc(doc(db, COLLECTIONS.employees, editingEmployeeId), employeeData);
                     window.showMessageBox("Employee record updated successfully!");
                 } else {
-                    // Add new record
-                    employeeData.createdAt = new Date().toISOString(); // Set creation timestamp for new records
+                    // The save button remains disabled until Firestore responds,
+                    // preventing repeated clicks from creating duplicate records.
+                    employeeData.createdAt = new Date().toISOString();
                     const docRef = await addDoc(collection(db, COLLECTIONS.employees), employeeData);
-                    window.showMessageBox("Employee record added successfully! ID: " + docRef.id);
+                    window.showMessageBox("Employee record submitted successfully! ID: " + docRef.id);
                 }
-                clearEmployeeForm(); // Clear form and reset buttons
+                clearEmployeeForm();
             } catch (e) {
                 window.showMessageBox("Error saving employee record: " + e.message);
                 console.error("Error saving employee record: ", e);
+            } finally {
+                setEmployeeSaveBusy(false);
             }
         };
 
@@ -2639,7 +2922,6 @@ Collection layout: ${layoutLabel}`
          * Updated to use new IDs and toggle 'hidden' class.
          */
         window.toggleAddQualificationInput = function() {
-            if (!requireAdministrator('add qualifications')) return;
             const container = document.getElementById('newQualificationSection');
             container.classList.toggle('hidden');
             if (!container.classList.contains('hidden')) {
@@ -2667,12 +2949,31 @@ Collection layout: ${layoutLabel}`
                 window.showMessageBox("Please enter a qualification name.");
                 return;
             }
+            if (newQualName.length < 3 || newQualName.length > 180) {
+                window.showMessageBox("Qualification name must contain 3 to 180 characters.");
+                return;
+            }
+
+            const normalizedNewQualification = newQualName.toLocaleLowerCase();
+            const qualificationSelect = document.getElementById('qualification');
+            const duplicateExists = Array.from(qualificationSelect.options)
+                .some(option => option.value.trim().toLocaleLowerCase() === normalizedNewQualification);
+            if (duplicateExists) {
+                qualificationSelect.value = Array.from(qualificationSelect.options)
+                    .find(option => option.value.trim().toLocaleLowerCase() === normalizedNewQualification)?.value || '';
+                document.getElementById('newQualificationSection').classList.add('hidden');
+                document.getElementById('newQualificationName').value = '';
+                toggleCertificationFieldsVisibility(qualificationSelect.value);
+                window.showMessageBox("This qualification already exists and has been selected.");
+                return;
+            }
 
             try {
-                // Add to a public collection for qualifications
+                // Qualification creation is restricted to the authorized administrator.
                 await addDoc(collection(db, COLLECTIONS.qualifications), {
                     name: newQualName,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    createdBy: userId
                 });
                 window.showMessageBox(`'${newQualName}' added successfully!`);
                 document.getElementById('newQualificationName').value = ''; // Clear input
@@ -3023,8 +3324,12 @@ Collection layout: ${layoutLabel}`
             const employeesRef = collection(db, COLLECTIONS.employees);
             unsubscribeEmployees = onSnapshot(query(employeesRef), (snapshot) => {
                 allEmployees = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+                populateEmployeeIdSuggestions();
                 renderEmployeeTable(allEmployees);
                 renderDashboard();
+                if (!editingEmployeeId && document.getElementById('employeeId')?.value.trim()) {
+                    tryAutofillEmployeeProfile({ silent: true });
+                }
 
                 const activeSubTabButton = document.querySelector('#employee-monitoring-content .sub-tab-button.active');
                 if (activeSubTabButton) {
@@ -3046,6 +3351,22 @@ Collection layout: ${layoutLabel}`
             const cancelNew = document.getElementById('cancelNewQualificationBtn');
             const nttcNa = document.getElementById('nttcNaCheckbox');
             const markAsOfficial = document.getElementById('markAsOfficial');
+            const employeeIdInput = document.getElementById('employeeId');
+
+            employeeIdInput?.addEventListener('input', () => {
+                if (editingEmployeeId) return;
+                lastAutofilledEmployeeId = '';
+                clearTimeout(employeeAutofillTimer);
+                const employeeId = employeeIdInput.value.trim();
+                if (!employeeId) {
+                    tryAutofillEmployeeProfile();
+                    return;
+                }
+                setEmployeeAutofillStatus('Searching for an existing employee profile…', 'searching');
+                employeeAutofillTimer = setTimeout(() => tryAutofillEmployeeProfile(), 500);
+            });
+            employeeIdInput?.addEventListener('change', () => tryAutofillEmployeeProfile({ force: true }));
+            employeeIdInput?.addEventListener('blur', () => tryAutofillEmployeeProfile());
 
             qualification?.addEventListener('change', (event) => {
                 toggleCertificationFieldsVisibility(event.target.value);
