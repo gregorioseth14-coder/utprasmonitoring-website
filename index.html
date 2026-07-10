@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTPRAS Monitoring — Admin Controlled v2</title>
+    <title>UTPRAS Monitoring — NC Dashboard and Exact Dates</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -607,6 +607,32 @@
             color: #1e3a8a;
         }
 
+        .program-summary-card.nc-level-card {
+            border-left-color: #0f766e;
+            background: #f0fdfa;
+        }
+
+        .program-summary-card.nc-level-card .program-count {
+            color: #115e59;
+        }
+
+        .utpras-date-input {
+            width: 100%;
+            min-width: 145px;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            border: 1px solid #93c5fd;
+            border-radius: 7px;
+            background: #ffffff;
+            font: inherit;
+        }
+
+        .utpras-date-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+        }
+
         .dashboard-section-title {
             font-size: 1.25rem;
             font-weight: 800;
@@ -737,6 +763,26 @@
             <div class="program-summary-card">
                 <h4>Diploma Programs</h4>
                 <div class="program-count" id="dashboardDiplomaCount">0</div>
+            </div>
+        </div>
+
+        <h3 class="dashboard-section-title">With Training Regulations by NC Level</h3>
+        <div class="program-summary-grid" aria-label="With Training Regulations programs by NC level">
+            <div class="program-summary-card nc-level-card">
+                <h4>NC I</h4>
+                <div class="program-count" id="dashboardNCIConfigCount">0</div>
+            </div>
+            <div class="program-summary-card nc-level-card">
+                <h4>NC II</h4>
+                <div class="program-count" id="dashboardNCIIConfigCount">0</div>
+            </div>
+            <div class="program-summary-card nc-level-card">
+                <h4>NC III</h4>
+                <div class="program-count" id="dashboardNCIIIConfigCount">0</div>
+            </div>
+            <div class="program-summary-card nc-level-card">
+                <h4>NC IV</h4>
+                <div class="program-count" id="dashboardNCIVConfigCount">0</div>
             </div>
         </div>
 
@@ -1564,13 +1610,70 @@ Collection layout: ${layoutLabel}`
          * @param {string} dateString The date string to format.
          * @returns {string} The formatted date string or the original string if invalid.
          */
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                return dateString;
+        function parseDateOnly(dateString) {
+            if (!dateString) return null;
+
+            const value = String(dateString).trim();
+            const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+            if (isoMatch) {
+                const year = Number(isoMatch[1]);
+                const month = Number(isoMatch[2]);
+                const day = Number(isoMatch[3]);
+                const localDate = new Date(year, month - 1, day);
+
+                if (
+                    localDate.getFullYear() === year &&
+                    localDate.getMonth() === month - 1 &&
+                    localDate.getDate() === day
+                ) {
+                    return localDate;
+                }
+
+                return null;
             }
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return new Intl.DateTimeFormat('en-US', options).format(date);
+
+            const parsed = new Date(value);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+
+            const date = parseDateOnly(dateString);
+            if (!date) return dateString;
+
+            return new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(date);
+        }
+
+        function toLocalISODate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getTodayLocalISODate() {
+            return toLocalISODate(new Date());
+        }
+
+        function addYearsToISODate(dateString, numberOfYears) {
+            const date = parseDateOnly(dateString);
+            if (!date) return '';
+
+            const originalMonth = date.getMonth();
+            date.setFullYear(date.getFullYear() + numberOfYears);
+
+            // Handle February 29 safely when the target year is not a leap year.
+            if (date.getMonth() !== originalMonth) {
+                date.setDate(0);
+            }
+
+            return toLocalISODate(date);
         }
 
         /**
@@ -1772,9 +1875,37 @@ Collection layout: ${layoutLabel}`
             return rows.sort((a, b) => a.daysRemaining - b.daysRemaining || a.employeeName.localeCompare(b.employeeName));
         }
 
+        function getProgramNCLevel(program) {
+            const category = getProgramCategory(program);
+            if (category !== 'With Training Regulations') return null;
+
+            const qualification = String(program.qualification || '').toUpperCase();
+            const match = qualification.match(/\bNC\s*(IV|III|II|I)\b/);
+            return match ? `NC ${match[1]}` : null;
+        }
+
+        function getWithTRNCLevelCounts(programs) {
+            const counts = {
+                'NC I': 0,
+                'NC II': 0,
+                'NC III': 0,
+                'NC IV': 0
+            };
+
+            programs.forEach(program => {
+                const level = getProgramNCLevel(program);
+                if (level && Object.prototype.hasOwnProperty.call(counts, level)) {
+                    counts[level] += 1;
+                }
+            });
+
+            return counts;
+        }
+
         function renderDashboard() {
             const trainers = allEmployees.filter(isTrainerRecord);
             const categoryCounts = {};
+            const withTRNCLevelCounts = getWithTRNCLevelCounts(allUtprasPrograms);
             UTPRAS_CATEGORIES.forEach(category => categoryCounts[category] = 0);
             allUtprasPrograms.forEach(program => {
                 const category = getProgramCategory(program);
@@ -1797,6 +1928,10 @@ Collection layout: ${layoutLabel}`
             setText('dashboardRecognizedCount', categoryCounts['Recognized TVET Programs'] || 0);
             setText('dashboardMicroCount', categoryCounts['Micro-Credential Courses'] || 0);
             setText('dashboardDiplomaCount', categoryCounts['Diploma Programs'] || 0);
+            setText('dashboardNCIConfigCount', withTRNCLevelCounts['NC I']);
+            setText('dashboardNCIIConfigCount', withTRNCLevelCounts['NC II']);
+            setText('dashboardNCIIIConfigCount', withTRNCLevelCounts['NC III']);
+            setText('dashboardNCIVConfigCount', withTRNCLevelCounts['NC IV']);
 
             const tableBody = document.getElementById('dashboardExpiryTable')?.getElementsByTagName('tbody')[0];
             if (!tableBody) return;
@@ -1864,6 +1999,8 @@ Collection layout: ${layoutLabel}`
             filteredPrograms.forEach((program, index) => {
                 const row = tableBody.insertRow();
                 row.setAttribute('data-id', program.id); // Store Firestore document ID on the row
+                row.dataset.dateRegistered = program.dateRegistered || '';
+                row.dataset.validity = program.validity || '';
 
                 row.innerHTML = `
                     <td>${index + 1}</td>
@@ -1897,8 +2034,8 @@ Collection layout: ${layoutLabel}`
                 qualification: "New Program",
                 registrationNumber: "UTP123456",
                 duration: "000 hours",
-                dateRegistered: new Date().toISOString().slice(0, 10),
-                validity: new Date(new Date().setFullYear(new Date().getFullYear() + 3)).toISOString().slice(0, 10),
+                dateRegistered: getTodayLocalISODate(),
+                validity: addYearsToISODate(getTodayLocalISODate(), 3),
                 userId: userId,
                 createdAt: new Date().toISOString()
             };
@@ -1917,16 +2054,38 @@ Collection layout: ${layoutLabel}`
          */
         window.editUtprasRow = function(button) {
             if (!requireAdministrator('edit UTPRAS programs')) return;
-            // For UTPRAS table, we'll keep the direct contenteditable for simplicity
-            const row = button.closest("tr");
-            row.cells[1].contentEditable = "true";
-            row.cells[2].contentEditable = "true";
-            row.cells[3].contentEditable = "true";
-            row.cells[4].contentEditable = "true";
-            row.cells[5].contentEditable = "true";
 
-            // Add a temporary save button if not already there
-            let saveButton = row.querySelector(".save-btn");
+            const row = button.closest('tr');
+            if (!row) return;
+
+            row.cells[1].contentEditable = 'true';
+            row.cells[2].contentEditable = 'true';
+            row.cells[3].contentEditable = 'true';
+
+            const dateRegistered = row.dataset.dateRegistered || '';
+            const validity = row.dataset.validity || '';
+
+            row.cells[4].innerHTML = `
+                <input
+                    type="date"
+                    class="utpras-date-input"
+                    data-field="dateRegistered"
+                    value="${dateRegistered}"
+                    aria-label="Date Registered"
+                >
+            `;
+
+            row.cells[5].innerHTML = `
+                <input
+                    type="date"
+                    class="utpras-date-input"
+                    data-field="validity"
+                    value="${validity}"
+                    aria-label="Validity Date"
+                >
+            `;
+
+            let saveButton = row.querySelector('.save-btn');
             if (!saveButton) {
                 saveButton = document.createElement('button');
                 saveButton.className = 'btn save-btn';
@@ -1934,68 +2093,83 @@ Collection layout: ${layoutLabel}`
                 saveButton.onclick = () => window.saveUtprasRow(saveButton);
                 button.parentNode.insertBefore(saveButton, button.nextSibling);
             }
-            saveButton.style.display = "inline-block";
-            button.style.display = "none"; // Hide edit button
+
+            saveButton.style.display = 'inline-block';
+            button.style.display = 'none';
         };
 
         /**
-         * Saves the changes made to an edited UTPRAS row to Firestore.
+         * Saves UTPRAS changes without converting date-only values through UTC.
+         * The exact YYYY-MM-DD values selected in the date inputs are stored.
          */
         window.saveUtprasRow = async function(button) {
             if (!requireAdministrator('save changes to UTPRAS programs')) return;
             if (!isAuthReady) {
-                window.showMessageBox("Authentication not ready. Please wait.");
+                window.showMessageBox('Authentication not ready. Please wait.');
                 return;
             }
 
-            const row = button.closest("tr");
-            const docId = row.getAttribute('data-id');
+            const row = button.closest('tr');
+            const docId = row?.getAttribute('data-id');
+            if (!row || !docId) {
+                window.showMessageBox('Unable to identify the program record. Refresh the page and try again.');
+                return;
+            }
 
             const qualification = row.cells[1].innerText.trim();
             const registrationNumber = row.cells[2].innerText.trim();
             const duration = row.cells[3].innerText.trim();
-            const dateRegisteredInput = row.cells[4].innerText.trim();
-            const validityInput = row.cells[5].innerText.trim();
+            const dateRegisteredInput = row.querySelector('input[data-field="dateRegistered"]');
+            const validityInput = row.querySelector('input[data-field="validity"]');
+            const dateRegistered = dateRegisteredInput?.value || '';
+            const validity = validityInput?.value || '';
+            const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
-            const monthDayYearRegex = /^(January|February|March|April|May|June|July|August|September|October|November|December)\s\d{1,2},\s\d{4}$/;
-
-            if (!monthDayYearRegex.test(dateRegisteredInput)) {
-                window.showMessageBox("Date Registered must be in 'Month Day, Year' format (e.g., 'May 26, 2023').");
-                return;
-            }
-            if (!monthDayYearRegex.test(validityInput)) {
-                window.showMessageBox("Validity must be in 'Month Day, Year' format (e.g., 'May 26, 2026').");
+            if (!qualification) {
+                window.showMessageBox('Program Qualification is required.');
                 return;
             }
 
-            const dateRegisteredForStorage = new Date(dateRegisteredInput).toISOString().slice(0, 10);
-            const validityForStorage = new Date(validityInput).toISOString().slice(0, 10);
+            if (!isoDatePattern.test(dateRegistered) || !parseDateOnly(dateRegistered)) {
+                window.showMessageBox('Please select a valid Date Registered.');
+                dateRegisteredInput?.focus();
+                return;
+            }
+
+            if (!isoDatePattern.test(validity) || !parseDateOnly(validity)) {
+                window.showMessageBox('Please select a valid Validity date.');
+                validityInput?.focus();
+                return;
+            }
 
             const updatedProgram = {
                 programCategory: activeUtprasCategory,
-                qualification: qualification,
-                registrationNumber: registrationNumber,
-                duration: duration,
-                dateRegistered: dateRegisteredForStorage,
-                validity: validityForStorage
+                qualification,
+                registrationNumber,
+                duration,
+                dateRegistered, // Stored exactly as selected: YYYY-MM-DD
+                validity        // Stored exactly as selected: YYYY-MM-DD
             };
 
             try {
                 await updateDoc(doc(db, COLLECTIONS.programs, docId), updatedProgram);
-                window.showMessageBox("Program updated successfully!");
-            } catch (e) {
-                window.showMessageBox("Error updating program: " + e.message);
-                console.error("Error updating program: ", e);
-            }
+                row.dataset.dateRegistered = dateRegistered;
+                row.dataset.validity = validity;
+                row.cells[4].textContent = formatDate(dateRegistered);
+                row.cells[5].textContent = formatDate(validity);
+                row.cells[1].contentEditable = 'false';
+                row.cells[2].contentEditable = 'false';
+                row.cells[3].contentEditable = 'false';
 
-            row.cells[1].contentEditable = "false";
-            row.cells[2].contentEditable = "false";
-            row.cells[3].contentEditable = "false";
-            row.cells[4].contentEditable = "false";
-            row.cells[5].contentEditable = "false";
-            
-            row.querySelector(".edit-btn").style.display = "inline-block";
-            button.style.display = "none"; // Hide save button
+                const editButton = row.querySelector('.edit-btn');
+                if (editButton) editButton.style.display = 'inline-block';
+                button.style.display = 'none';
+
+                window.showMessageBox('Program updated successfully!');
+            } catch (error) {
+                window.showMessageBox('Error updating program: ' + error.message);
+                console.error('Error updating program:', error);
+            }
         };
 
         /**
