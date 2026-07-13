@@ -1241,6 +1241,92 @@
         }
 
 
+        /* UTPRAS year and NC-level filters */
+        .utpras-filter-panel {
+            margin: 8px 0 20px;
+            padding: 16px;
+            border: 1px solid #bfdbfe;
+            border-left: 5px solid #1d4ed8;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eff6ff, #ffffff);
+            box-shadow: 0 5px 14px rgba(30, 64, 175, 0.07);
+        }
+
+        .utpras-filter-title {
+            margin: 0 0 12px;
+            color: #1e3a8a;
+            font-size: 0.98rem;
+            font-weight: 850;
+        }
+
+        .utpras-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+            align-items: end;
+            gap: 12px;
+        }
+
+        .utpras-filter-field label {
+            display: block;
+            margin-bottom: 6px;
+            color: #334155;
+            font-size: 0.84rem;
+            font-weight: 800;
+        }
+
+        .utpras-filter-select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 1px solid #93c5fd;
+            border-radius: 9px;
+            background: #ffffff;
+            color: #0f172a;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .utpras-filter-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+
+        .utpras-filter-reset {
+            min-height: 42px;
+            margin: 0;
+            padding: 10px 15px;
+            border: 1px solid #93c5fd;
+            border-radius: 9px;
+            background: #2563eb;
+            color: #ffffff;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .utpras-filter-reset:hover {
+            background: #1d4ed8;
+        }
+
+        .utpras-filter-result {
+            margin: 11px 0 0;
+            color: #475569;
+            font-size: 0.85rem;
+            font-weight: 750;
+        }
+
+        @media screen and (max-width: 760px) {
+            .utpras-filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .utpras-filter-reset {
+                width: 100%;
+            }
+        }
+
+
         /* Trainer qualification filter */
         .trainer-filter-bar {
             display: flex;
@@ -1994,6 +2080,34 @@
 
         <p id="activeUtprasCategoryLabel" class="text-center font-semibold text-gray-700 mb-4">Showing: With Training Regulations</p>
 
+        <section class="utpras-filter-panel" aria-label="UTPRAS program filters">
+            <h3 class="utpras-filter-title">Quickly Locate Registered Programs</h3>
+            <div class="utpras-filter-grid">
+                <div class="utpras-filter-field">
+                    <label for="utprasYearFilter">Year Registered</label>
+                    <select id="utprasYearFilter" class="utpras-filter-select" onchange="window.applyUtprasFilters()">
+                        <option value="all">All Years</option>
+                    </select>
+                </div>
+                <div class="utpras-filter-field">
+                    <label for="utprasLevelFilter">Qualification Level</label>
+                    <select id="utprasLevelFilter" class="utpras-filter-select" onchange="window.applyUtprasFilters()">
+                        <option value="all">All Levels</option>
+                        <option value="NC I">NC I</option>
+                        <option value="NC II">NC II</option>
+                        <option value="NC III">NC III</option>
+                        <option value="NC IV">NC IV</option>
+                    </select>
+                </div>
+                <button type="button" class="utpras-filter-reset" onclick="window.clearUtprasFilters()">
+                    Show All Programs
+                </button>
+            </div>
+            <p id="utprasFilterResult" class="utpras-filter-result">
+                Showing all registered programs in the selected category.
+            </p>
+        </section>
+
         <div class="controls">
             <button id="adminAddProgramBtn" class="btn add-btn hidden" data-admin-only onclick="window.addProgram()">
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -2736,6 +2850,8 @@ Collection layout: ${layoutLabel}`
         ];
         let allUtprasPrograms = [];
         let activeUtprasCategory = "With Training Regulations";
+        let activeUtprasYearFilter = "all";
+        let activeUtprasLevelFilter = "all";
 
         function getProgramCategory(program) {
             return program.programCategory || "With Training Regulations";
@@ -2804,13 +2920,25 @@ Collection layout: ${layoutLabel}`
             return rows.sort((a, b) => a.daysRemaining - b.daysRemaining || a.employeeName.localeCompare(b.employeeName));
         }
 
+        function detectProgramNCLevel(program) {
+            const qualification = String(program?.qualification || '').toUpperCase();
+            const match = qualification.match(/\bNC\s*(IV|III|II|I)\b/);
+            return match ? `NC ${match[1]}` : null;
+        }
+
         function getProgramNCLevel(program) {
             const category = getProgramCategory(program);
             if (category !== 'With Training Regulations') return null;
+            return detectProgramNCLevel(program);
+        }
 
-            const qualification = String(program.qualification || '').toUpperCase();
-            const match = qualification.match(/\bNC\s*(IV|III|II|I)\b/);
-            return match ? `NC ${match[1]}` : null;
+        function getProgramRegistrationYear(program) {
+            const dateValue = String(program?.dateRegistered || '').trim();
+            const match = dateValue.match(/^(\d{4})-\d{2}-\d{2}$/);
+            if (match) return match[1];
+
+            const parsed = new Date(dateValue);
+            return Number.isNaN(parsed.getTime()) ? '' : String(parsed.getFullYear());
         }
 
         function getWithTRNCLevelCounts(programs) {
@@ -3150,12 +3278,65 @@ Collection layout: ${layoutLabel}`
             window.applyDashboardExpiryFilters();
         }
 
+        function populateUtprasYearFilter(data) {
+            const yearSelect = document.getElementById('utprasYearFilter');
+            if (!yearSelect) return;
+
+            const previousValue = activeUtprasYearFilter;
+            const years = Array.from(new Set(
+                data
+                    .filter(program => getProgramCategory(program) === activeUtprasCategory)
+                    .map(getProgramRegistrationYear)
+                    .filter(Boolean)
+            )).sort((a, b) => Number(b) - Number(a));
+
+            yearSelect.innerHTML = '<option value="all">All Years</option>';
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+
+            const canPreserve = previousValue === 'all' || years.includes(previousValue);
+            activeUtprasYearFilter = canPreserve ? previousValue : 'all';
+            yearSelect.value = activeUtprasYearFilter;
+        }
+
+        window.applyUtprasFilters = function() {
+            const yearSelect = document.getElementById('utprasYearFilter');
+            const levelSelect = document.getElementById('utprasLevelFilter');
+
+            activeUtprasYearFilter = yearSelect?.value || 'all';
+            activeUtprasLevelFilter = levelSelect?.value || 'all';
+            renderUtprasTable(allUtprasPrograms);
+        };
+
+        window.clearUtprasFilters = function() {
+            activeUtprasYearFilter = 'all';
+            activeUtprasLevelFilter = 'all';
+
+            const yearSelect = document.getElementById('utprasYearFilter');
+            const levelSelect = document.getElementById('utprasLevelFilter');
+            if (yearSelect) yearSelect.value = 'all';
+            if (levelSelect) levelSelect.value = 'all';
+
+            renderUtprasTable(allUtprasPrograms);
+        };
+
         window.switchUtprasCategory = function(category) {
             activeUtprasCategory = UTPRAS_CATEGORIES.includes(category) ? category : "With Training Regulations";
+            activeUtprasYearFilter = 'all';
+            activeUtprasLevelFilter = 'all';
 
             document.querySelectorAll('.utpras-category-button').forEach(button => {
                 button.classList.toggle('active', button.textContent.trim() === activeUtprasCategory);
             });
+
+            const yearSelect = document.getElementById('utprasYearFilter');
+            const levelSelect = document.getElementById('utprasLevelFilter');
+            if (yearSelect) yearSelect.value = 'all';
+            if (levelSelect) levelSelect.value = 'all';
 
             const label = document.getElementById('activeUtprasCategoryLabel');
             const caption = document.getElementById('utprasTableCaption');
@@ -3166,30 +3347,79 @@ Collection layout: ${layoutLabel}`
         };
 
         /**
-         * Populates the UTPRAS table with data fetched from Firestore.
+         * Populates the UTPRAS table with filtered data from Firestore.
+         * Programs are always displayed alphabetically by qualification.
          * @param {Array<Object>} data An array of program objects from Firestore.
          */
         function renderUtprasTable(data) {
-            const tableBody = document.getElementById("utprasTable").getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing rows
+            const table = document.getElementById('utprasTable');
+            if (!table) return;
 
-            const filteredPrograms = data
-                .filter(program => getProgramCategory(program) === activeUtprasCategory)
+            const tableBody = table.getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            populateUtprasYearFilter(data);
+
+            const yearSelect = document.getElementById('utprasYearFilter');
+            const levelSelect = document.getElementById('utprasLevelFilter');
+            activeUtprasYearFilter = yearSelect?.value || activeUtprasYearFilter || 'all';
+            activeUtprasLevelFilter = levelSelect?.value || activeUtprasLevelFilter || 'all';
+
+            const categoryPrograms = data.filter(
+                program => getProgramCategory(program) === activeUtprasCategory
+            );
+
+            const filteredPrograms = categoryPrograms
+                .filter(program => {
+                    if (activeUtprasYearFilter === 'all') return true;
+                    return getProgramRegistrationYear(program) === activeUtprasYearFilter;
+                })
+                .filter(program => {
+                    if (activeUtprasLevelFilter === 'all') return true;
+                    return detectProgramNCLevel(program) === activeUtprasLevelFilter;
+                })
                 .sort((a, b) => {
-                    const dateA = new Date(a.createdAt || 0);
-                    const dateB = new Date(b.createdAt || 0);
-                    return dateA.getTime() - dateB.getTime();
+                    const qualificationComparison = String(a.qualification || '').localeCompare(
+                        String(b.qualification || ''),
+                        undefined,
+                        { sensitivity: 'base', numeric: true }
+                    );
+                    if (qualificationComparison !== 0) return qualificationComparison;
+
+                    return String(a.registrationNumber || '').localeCompare(
+                        String(b.registrationNumber || ''),
+                        undefined,
+                        { sensitivity: 'base', numeric: true }
+                    );
                 });
+
+            const resultText = document.getElementById('utprasFilterResult');
+            if (resultText) {
+                const yearLabel = activeUtprasYearFilter === 'all'
+                    ? 'all registration years'
+                    : `year ${activeUtprasYearFilter}`;
+                const levelLabel = activeUtprasLevelFilter === 'all'
+                    ? 'all qualification levels'
+                    : activeUtprasLevelFilter;
+
+                resultText.textContent =
+                    `Showing ${filteredPrograms.length} of ${categoryPrograms.length} program(s) ` +
+                    `in ${activeUtprasCategory} — ${yearLabel}, ${levelLabel}.`;
+            }
 
             if (filteredPrograms.length === 0) {
                 const emptyRow = tableBody.insertRow();
-                emptyRow.innerHTML = `<td colspan="7" class="text-center text-gray-500">No records yet for ${activeUtprasCategory}.</td>`;
+                emptyRow.innerHTML = `
+                    <td colspan="7" class="text-center text-gray-500">
+                        No programs match the selected category, year, and qualification level.
+                    </td>
+                `;
                 return;
             }
 
             filteredPrograms.forEach((program, index) => {
                 const row = tableBody.insertRow();
-                row.setAttribute('data-id', program.id); // Store Firestore document ID on the row
+                row.setAttribute('data-id', program.id);
                 row.dataset.dateRegistered = program.dateRegistered || '';
                 row.dataset.validity = program.validity || '';
 
@@ -3344,19 +3574,17 @@ Collection layout: ${layoutLabel}`
 
             try {
                 await updateDoc(doc(db, COLLECTIONS.programs, docId), updatedProgram);
-                row.dataset.dateRegistered = dateRegistered;
-                row.dataset.validity = validity;
-                row.cells[4].textContent = formatDate(dateRegistered);
-                row.cells[5].textContent = formatDate(validity);
-                row.cells[1].contentEditable = 'false';
-                row.cells[2].contentEditable = 'false';
-                row.cells[3].contentEditable = 'false';
+                const localProgram = allUtprasPrograms.find(program => program.id === docId);
+                if (localProgram) {
+                    Object.assign(localProgram, updatedProgram);
+                }
 
-                const editButton = row.querySelector('.edit-btn');
-                if (editButton) editButton.style.display = 'inline-block';
-                button.style.display = 'none';
+                // Re-render immediately so the saved qualification moves
+                // automatically to its correct alphabetical position.
+                renderUtprasTable(allUtprasPrograms);
+                renderDashboard();
 
-                window.showMessageBox('Program updated successfully!');
+                window.showMessageBox('Program updated successfully and arranged alphabetically!');
             } catch (error) {
                 window.showMessageBox('Error updating program: ' + error.message);
                 console.error('Error updating program:', error);
